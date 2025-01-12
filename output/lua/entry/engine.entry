@@ -1,0 +1,6 @@
+modEntry = {
+    Shared = "lua/Siege/Shared/SiegeShared.lua",
+    Server = "lua/Siege/Server/SiegeServer.lua",
+    Client = "lua/Siege/Client/SiegeClient.lua",
+    Priority = 10
+}

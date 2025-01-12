@@ -1,6 +1,69 @@
 <editor>
 <classes>
     
+<class name="frontdoor" placeable="true">		
+		<parent>logic_toggle_base</parent>
+		
+		<model>
+			<file>model</file>
+			<scale>scale</scale>
+		</model>
+		
+		
+        <size>
+            <scale>scale</scale>
+        </size>
+
+        <parameter name="scale" type="vector" label="scale" default="1.0, 1.0, 1.0"/>
+      <parameter name="model" type="file" label="model" default="models/props/eclipse/eclipse_wallmodse_02_door.model" filter="*.model"/>
+	<parameter name="timer" type="real" label="Timer" help=" 60 seconds = 1 minute ;) - If set to 0 then it will default to 5ish minutes " default="0.0"/>
+	<parameter name="shortenTimer" type="boolean" label="ShortenTimer" help="Shorts timer by random 50%-80%. By default 5-7min front timer with shortened timer enabled due to recent changes of having autobuild and such to get rid of long wait times" default="true"/>
+
+
+    </class>
+
+    	<class name="siegedoor" placeable="true">		
+		<parent>logic_toggle_base</parent>
+		
+		<model>
+			<file>model</file>
+			<scale>scale</scale>
+		</model>
+		
+		
+        <size>
+            <scale>scale</scale>
+        </size>
+        <parameter name="scale" type="vector" label="scale" default="1.0, 1.0, 1.0"/>
+	<parameter name="model" type="file" label="model" default="models/props/eclipse/eclipse_wallmodse_02_door.model" filter="*.model"/>
+	<parameter name="timer" type="real" label="Timer" help=" 60 seconds = 1 minute ;) - If set to 0 then it will default to 5ish minutes " default="0.0"/>
+      
+				
+    </class>
+
+
+
+
+        	<class name="sidedoor" placeable="true">		
+		<parent>logic_toggle_base</parent>
+		
+		<model>
+			<file>model</file>
+			<scale>scale</scale>
+		</model>
+		
+		
+        <size>
+            <scale>scale</scale>
+        </size>
+        <parameter name="scale" type="vector" label="scale" default="1.0, 1.0, 1.0"/>
+          <parameter name="model" type="file" label="model" default="models/props/eclipse/eclipse_wallmodse_02_door.model" filter="*.model"/>
+   	<parameter name="timer" type="real" label="Timer" default="420.0"/>
+      
+
+
+    </class>			
+
     <!-- Ambient sound -->    
     <class name="ambient_sound">
         <help>Plays sound for a local player when entering specifies radius.</help>
@@ -517,6 +580,20 @@
         </model>
     
     </class>
+
+
+
+<class name="siege_gamerules" label="Use Siege mode gameplay">
+    <parent>gamerules</parent>
+
+    <parameter name="frontDoorTime" type="float" label="Front Door Time" help="Time in seconds when the front door opens." default="60" />
+    <parameter name="siegeDoorTime" type="float" label="Siege Door Time" help="Time in seconds when the siege door opens." default="180" />
+
+    <model>
+        <file>models/system/editor/gamerules.model</file>
+    </model>
+</class>
+
     
     <!-- Skulk challenge finish line area -->
     <class name="finish_line" placeable="true" alwaysPositiveScale="true">
