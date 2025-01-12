@@ -1,6 +1,27 @@
 <editor>
 <classes>
     
+
+<class name="breakable_door" placeable="true">		
+		<parent>logic_toggle_base</parent>
+		
+		<model>
+			<file>model</file>
+			<scale>scale</scale>
+		</model>
+	
+        <size>
+            <scale>scale</scale>
+        </size>
+
+        <parameter name="scale" type="vector" label="scale" default="1.0, 1.0, 1.0"/>
+        <parameter name="model" type="file" label="model" default="models/misc/door/door.model" filter="*.model"/>
+
+
+    </class>
+
+
+
 <class name="frontdoor" placeable="true">		
 		<parent>logic_toggle_base</parent>
 		

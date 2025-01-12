@@ -21,6 +21,7 @@ local networkVars =
 function Timer:TimerValues()
    self.SiegeTimer = kSiegeTime 
    self.FrontTimer = kFrontTime
+    self.SideTimer = kSideTime
    self.initialSiegeLength = self.SiegeTimer
    self.sideOpened = kSideTime
    self.sideOpened = false
@@ -69,14 +70,14 @@ function Timer:OnRoundStart()
 end
 
 function Timer:GetSiegeOpenBoolean()
- if not GetGameStarted() then
+ if not GetGamerules():GetGameStarted() then
     return true
  else
     return self.siegeOpened
  end 
 end
 function Timer:GetFrontOpenBoolean()
- if not GetGameStarted() then
+ if not GetGamerules():GetGameStarted() then
     return true
  else
     return self.frontOpened
@@ -107,12 +108,13 @@ function Timer:OpenFrontDoors()
         OpenEightTimes(frontdoor)
     end 
     
-    if GetGameStarted() then 
-        GetGamerules():DisplayFront()
-        for _, player in ientitylist(Shared.GetEntitiesWithClassname("Player")) do
-            StartSoundEffectForPlayer(Timer.kFrontDoorSound, player)
-        end
-    end  
+--     if GetGamerules():GetGameStarted() then
+--          GetGamerules():DisplayFront()
+--         for _, player in ientitylist(Shared.GetEntitiesWithClassname("Player")) do
+--             StartSoundEffectForPlayer(Timer.kFrontDoorSound, player)
+--         end
+--     end
+    Print("Front Doors Opened at %s", Shared.GetTime())
         
 end
 function Timer:OpenSiegeDoors()
@@ -123,11 +125,12 @@ function Timer:OpenSiegeDoors()
             OpenEightTimes(siegedoor) 
             end
        end
-      if GetGameStarted() then
-            for _, player in ientitylist(Shared.GetEntitiesWithClassname("Player")) do
-            StartSoundEffectForPlayer(Timer.kSiegeDoorSound, player)
-           end
-      end   
+   Print("Siege Doors Opened at %s", Shared.GetTime())
+--       if GetGamerules():GetGameStarted() then
+--             for _, player in ientitylist(Shared.GetEntitiesWithClassname("Player")) do
+--             StartSoundEffectForPlayer(Timer.kSiegeDoorSound, player)
+--            end
+--       end
 end
 function Timer:OpenSideDoors()
      self.SideTimer = 0
@@ -135,9 +138,11 @@ function Timer:OpenSideDoors()
        for index, sidedoor in ientitylist(Shared.GetEntitiesWithClassname("SideDoor")) do
             OpenEightTimes(sidedoor) 
        end
-       if GetGameStarted() then 
-        GetGamerules():DisplaySide()
-        end
+     Print("Side Doors Opened at %s", Shared.GetTime())
+     Print("Side Door Timer is %s", self.SideTimer)
+--        if GetGamerules():GetGameStarted() then
+--         GetGamerules():DisplaySide()
+--         end
 end
 
 function Timer:AdjustFrontTimer(time)

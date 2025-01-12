@@ -938,6 +938,18 @@ function GUIMarineHUD:Update(deltaTime)
         self.statusDisplay.healthBorderMask:SetColor(Color(1,1,1,0))
         self.statusDisplay.armorBorderMask:SetColor(Color(1,1,1,0))
     end
+
+
+
+    -- Update resource display
+--     local resourceUpdate = {
+--         PlayerUI_GetGameLengthTime(),
+--         PlayerUI_GetFrontLength(),
+--         PlayerUI_GetSiegeLength(),
+--         PlayerUI_GetSideLength()
+--     }
+
+    --self.resourceDisplay:UpdateFrontSiege(deltaTime, resourceUpdate)
     
 end
 

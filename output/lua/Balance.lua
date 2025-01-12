@@ -14,7 +14,9 @@ Script.Load("lua/BalanceMisc.lua")
 
 -- Siege
 
-
+kFrontTime = 30 --debug
+kSiegeTime = 90 --debug
+kSideTime = 60
 
 
 

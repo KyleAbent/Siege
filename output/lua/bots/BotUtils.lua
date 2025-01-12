@@ -211,7 +211,7 @@ function GetDistanceToTouch( fromEntOrPos, target )
     if HasMixin( target, "Target" ) then
         targetPos = target:GetEngagementPoint()
     end
-    
+
     return math.max( 0.0, GetBotWalkDistance(fromEntOrPos, target) - entSize )
 
 end
@@ -264,9 +264,9 @@ function FilterTableEntries(ents, filterFunc)
             table.insert(result, entry)
         end
     end
-    
+
     return result
-    
+
 end
 
 function GetMaxTableEntry(table, valueFunc)
@@ -391,17 +391,17 @@ function FilterArray(ents, keepFunc)
 end
 
 function GetPotentialTargetEntities(player)
-    
+
     local origin = player:GetOrigin()
     local range = 20
     local teamNumber = GetEnemyTeamNumber(player:GetTeamNumber())
-    
-    local function filterFunction(entity)    
-        return HasMixin(entity, "Team") and HasMixin(entity, "LOS") and HasMixin(entity, "Live")  and 
-               entity:GetTeamNumber() == teamNumber and entity:GetIsSighted() and entity:GetIsAlive()     
+
+    local function filterFunction(entity)
+        return HasMixin(entity, "Team") and HasMixin(entity, "LOS") and HasMixin(entity, "Live")  and
+               entity:GetTeamNumber() == teamNumber and entity:GetIsSighted() and entity:GetIsAlive()
     end
     return Shared.GetEntitiesWithTagInRange("class:ScriptActor", origin, range, filterFunction)
-    
+
 end
 
 ---@return TeamBrain.Memory[]
@@ -432,7 +432,7 @@ function GetLastEntityClass(entId)
 end
 
 function UpdateEntityForTeamBrains(entity, destroy)
-    
+
     if not entity then return end
     local entId = entity:GetId()
     if destroy then
@@ -563,20 +563,20 @@ function GetServerContainsBots()
     local hasBots = false
     local players = Shared.GetEntitiesWithClassname("Player")
     for p = 0, players:GetSize() - 1 do
-    
+
 		local player = players:GetEntityAtIndex(p)
         local ownerClient = player and Server.GetOwner(player)
         if ownerClient and ownerClient:GetIsVirtual() then
-        
+
             hasBots = true
             break
-            
+
         end
-        
+
     end
-    
+
     return hasBots
-    
+
 end
 
 
@@ -598,8 +598,8 @@ function GetPathSlope(pathPoints, activeIdx, steps, startOrgY)
     for i = activeIdx, #pathPoints do
 
         --account for pathable spaces always being above world origin
-        heightSlopeSum = (pathPoints[i].y < startOrgY) and 
-            heightSlopeSum - pathPoints[i].y or 
+        heightSlopeSum = (pathPoints[i].y < startOrgY) and
+            heightSlopeSum - pathPoints[i].y or
             heightSlopeSum + pathPoints[i].y
 
         table.insert(lookAheadDelta, pathPoints[i].y)
@@ -635,7 +635,7 @@ function GetPathHeightMean( pathPoints, activeIdx, steps )
             break
         end
     end
-    
+
     return table.mean(lookAheadDelta)
 end
 

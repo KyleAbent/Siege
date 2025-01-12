@@ -47,6 +47,12 @@ local networkVars =
     -- Network variables for visibility of end-of-round stats UI. (It's a server disable-able option)
     showEndStatsAuto = "boolean",
     showEndStatsTeamBreakdown = "boolean",
+
+
+
+    frontTimer = "integer",
+    sideTimer = "integer",
+    siegeTimer = "integer",
 }
 
 function GameInfo:OnCreate()
@@ -96,7 +102,37 @@ function GameInfo:OnCreate()
         self.prevTimeLength = nil
         self.prevTeamsSkills = nil
     end
+
+    self.frontTimer = kFrontTime
+    self.sideTimer = kSideTime
+    self.siegeTimer = kSiegeTime
     
+end
+
+
+function GameInfo:GetFrontTime()
+   return self.frontTimer
+end
+
+function GameInfo:SetFrontTime(time)
+    self.frontTimer = time
+end
+
+function GameInfo:GetSideTime()
+   return self.sideTimer
+end
+
+function GameInfo:SetSideTime(time)
+    self.sideTimer = time
+end
+
+
+function GameInfo:GetSiegeTime()
+   return self.siegeTimer
+end
+
+function GameInfo:SetSiegeTime(time)
+    self.siegeTimer = time
 end
 
 function GameInfo:GetIsDedicated()

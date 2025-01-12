@@ -24,6 +24,9 @@ function SiegeGameRules:OnCreate()
     self.sideTimer = kSideTime
     self.siegeTimer = kSiegeTime
     Print("SiegeGameRules initialized.")
+    Print("Front door time = " .. self.frontTimer)
+    Print("Side door time = " .. self.sideTimer)
+    Print("Siege door time = " .. self.siegeTimer)
 end
 
 function GameInfo:GetFrontTime()
@@ -53,20 +56,20 @@ end
 
 
 
--- Called when map loads
-function SiegeGameRules:OnMapPostLoad()
-    NS2Gamerules.OnMapPostLoad(self)
-
-    -- Load map-specific settings
-    local mapName = Shared.GetMapName()
-    if kSiegeMapSettings[mapName] then
-        self.frontDoorTime = kSiegeMapSettings[mapName].frontDoorTime or self.frontDoorTime
-        self.siegeDoorTime = kSiegeMapSettings[mapName].siegeDoorTime or self.siegeDoorTime
-    end
-
-    Print(string.format("Map loaded: Front door time = %d, Siege door time = %d",
-        self.frontDoorTime, self.siegeDoorTime))
-end
+-- -- Called when map loads
+-- function SiegeGameRules:OnMapPostLoad()
+--     NS2Gamerules.OnMapPostLoad(self)
+--
+--     -- Load map-specific settings
+--     local mapName = Shared.GetMapName()
+--     if kSiegeMapSettings[mapName] then
+--         self.frontDoorTime = kSiegeMapSettings[mapName].frontDoorTime or self.frontDoorTime
+--         self.siegeDoorTime = kSiegeMapSettings[mapName].siegeDoorTime or self.siegeDoorTime
+--     end
+--
+--     Print(string.format("Map loaded: Front door time = %d, Siege door time = %d",
+--         self.frontDoorTime, self.siegeDoorTime))
+-- end
 
 -- Override game start check to handle siege-specific conditions
 function SiegeGameRules:CheckGameStart()
@@ -85,52 +88,21 @@ end
 -- Update game state
 
 
-function SiegeGameRules:OpenDoor(doorType)
-    if doorType == "Front" and not self.frontDoorOpened then
-        self.frontDoorOpened = true
-        Print("Front door opened!")
-        Server.SendNetworkMessage("FrontDoorOpened", {}, true)
-    elseif doorType == "Siege" and not self.siegeDoorOpened then
-        self.siegeDoorOpened = true
-        Print("Siege door opened!")
-        Server.SendNetworkMessage("SiegeDoorOpened", {}, true)
+
+if Server then
+
+    --local origPostLoad = NS2Gamerules.OnMapPostLoad
+    function SiegeGameRules:OnMapPostLoad()
+        --origPostLoad(self)
+        --Override to fix bugs?
+        self:AddTimedCallback(function() GetLocationGraph() print("GetLocationgraph delay") end, 1)
+        NS2Gamerules.OnMapPostLoad(self)
+        Server.CreateEntity(Timer.kMapName)
+        Print("Timer Created")
     end
+
+
 end
-
-
-function SiegeGameRules:SendTimerUpdateToClients()
-    if Server then
-        Server.SendNetworkMessage("SiegeTimerUpdate", {
-            frontDoorTime = self.frontDoorTime,
-            siegeDoorTime = self.siegeDoorTime,
-            timeElapsed = self.timeElapsed
-        }, true)
-    end
-end
-
-
-function SiegeGameRules:OnClientConnect(client)
-    -- Call parent implementation
-    NS2Gamerules.OnClientConnect(self, client)
-
-    -- Send initial state to new client
-    if Server then
-        Server.SendNetworkMessage(client, "SiegeTimerUpdate", {
-            frontDoorTime = self.frontDoorTime,
-            siegeDoorTime = self.siegeDoorTime,
-            timeElapsed = self.timeElapsed
-        }, true)
-        Print("SiegeGameRules: Sent initial state to new client")
-    end
-end
-
-
-
-
-
-
-
-
 
 
 
