@@ -1,0 +1,8 @@
+name        = "Siege 2025"
+source_dir  = "source/"
+output_dir  = "output/"
+description = [=[Siege 2025]=]
+image       = "preview.jpg"
+tag_modtype = "Custom Game Mode"
+tag_support = "Must be run on Server"
+publish_id = 3405817940
