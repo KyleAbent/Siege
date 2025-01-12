@@ -5,31 +5,53 @@ class 'SiegeGameRules' (NS2Gamerules)
 
 SiegeGameRules.kMapName = "siege_gamerules"
 
+local networkVars =
+{
+    frontTimer = "integer",
+    sideTimer = "integer",
+    siegeTimer = "integer",
+    dynamicAdjustment = "integer",
+    countofpowerwhensetup = "integer",
+    countofpowercurrently = "integer",
+}
+
 -- Initialize game rules
 function SiegeGameRules:OnCreate()
     NS2Gamerules.OnCreate(self)
 
     -- Default timers
-    self.frontDoorTime = 60  -- Default, can be overridden by map
-    self.siegeDoorTime = 180 -- Default, can be overridden by map
-    self.timeElapsed = 0
-    self.frontDoorOpened = false
-    self.siegeDoorOpened = false
-
+    self.frontTimer = kFrontTime
+    self.sideTimer = kSideTime
+    self.siegeTimer = kSiegeTime
     Print("SiegeGameRules initialized.")
 end
 
-function SiegeGameRules:GetFrontDoorTime()
-    return self.frontDoorTime
+function GameInfo:GetFrontTime()
+   return self.frontTimer
 end
 
-function SiegeGameRules:GetSiegeDoorTime()
-    return self.siegeDoorTime
+function GameInfo:SetFrontTime(time)
+    self.frontTimer = time
 end
 
-function SiegeGameRules:GetTimeElapsed()
-    return self.timeElapsed
+function GameInfo:GetSideTime()
+   return self.sideTimer
 end
+
+function GameInfo:SetSideTime(time)
+    self.sideTimer = time
+end
+
+function GameInfo:GetSiegeTime()
+   return self.siegeTimer
+end
+
+function GameInfo:SetSiegeTime(time)
+    self.siegeTimer = time
+end
+
+
+
 
 -- Called when map loads
 function SiegeGameRules:OnMapPostLoad()
@@ -57,35 +79,11 @@ function SiegeGameRules:CheckGameStart()
         self.frontDoorOpened = false
         self.siegeDoorOpened = false
         -- Initial update to clients
-        self:SendTimerUpdateToClients()
     end
 end
 
 -- Update game state
 
-function SiegeGameRules:UpdateGame(deltaTime)
-    -- Call parent implementation
-    NS2Gamerules.UpdateGame(self, deltaTime)
-
-    if self:GetGameStarted() then
-        local previousTime = math.floor(self.timeElapsed)
-        self.timeElapsed = self.timeElapsed + deltaTime
-
-        -- Send updates when second changes or game just started
-        if math.floor(self.timeElapsed) > previousTime or previousTime == 0 then
-            self:SendTimerUpdateToClients()
-        end
-
-        -- Check door states
-        if not self.frontDoorOpened and self.timeElapsed >= self.frontDoorTime then
-            self:OpenDoor("Front")
-        end
-
-        if not self.siegeDoorOpened and self.timeElapsed >= self.siegeDoorTime then
-            self:OpenDoor("Siege")
-        end
-    end
-end
 
 function SiegeGameRules:OpenDoor(doorType)
     if doorType == "Front" and not self.frontDoorOpened then
