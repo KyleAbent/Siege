@@ -164,6 +164,82 @@ local kCachedTechCategories
 local kCachedMapNameTechIds
 local kCachedTechData
 
+
+function GetCheckCommandStationLimit(techId, origin, normal, commander)
+    local num = 0
+       for _, cc in ipairs(GetEntitiesWithinRange("CommandStation", origin, 9999)) do
+
+                num = num + 1
+    end
+    return num < 3
+end
+
+function GetCheckDrifterLimit(techId, origin, normal, commander)
+    local num = 0
+    for index, spur in ientitylist(Shared.GetEntitiesWithClassname("Drifter")) do
+      num = num + 1
+    end
+    for index, derp in ientitylist(Shared.GetEntitiesWithClassname("DrifterEgg")) do
+     num = num + 1
+    end
+    return num < 10
+end
+
+
+function GetCheckExoSuitLimit(techId, origin, normal, commander)
+    local num = 0
+    for index, exosuit in ientitylist(Shared.GetEntitiesWithClassname("Exosuit")) do
+       num = num + 1
+    end
+    return num < 8
+end
+
+function GetCheckJetpackLimit(techId, origin, normal, commander)
+    local num = 0
+     for index, jp in ientitylist(Shared.GetEntitiesWithClassname("Jetpack")) do
+     num = num + 1
+    end
+    return num < 8
+
+end
+
+function GetCheckShellLimit(techId, origin, normal, commander)
+    local num = 0
+    for index, shell in ientitylist(Shared.GetEntitiesWithClassname("Shell")) do
+      num = num + 1
+    end
+    return num < 6
+end
+
+function GetCheckVeilLimit(techId, origin, normal, commander)
+    local num = 0
+        for index, veil in ientitylist(Shared.GetEntitiesWithClassname("Veil")) do
+                num = num + 1
+    end
+    return num < 6
+end
+
+function GetCheckSpurLimit(techId, origin, normal, commander)
+    local num = 0
+        for index, spur in ientitylist(Shared.GetEntitiesWithClassname("Spur")) do
+            if not spur:isa("StructureBeacon") then
+                num = num + 1
+            end
+    end
+    return num < 6
+end
+
+function GetCheckArmsLimit(techId, origin, normal, commander)
+    local num = 0
+        for index, arms in ientitylist(Shared.GetEntitiesWithClassname("ArmsLab")) do
+            num = num + 1
+    end
+    return num < 6
+end
+
+
+--------
+
 -- Remap techdata for faster lookups
 function BuildTechDataCache()
     kCachedTechData = {}
@@ -768,7 +844,8 @@ function BuildTechData()
             [kTechDataHint] = "COMMAND_STATION_HINT",
             [kTechDataAllowStacking] = true,
             [kStructureAttachClass] = "TechPoint",
-            [kTechDataAttachOptional] = false,
+            [kTechDataAttachOptional] = true,
+            [kTechDataBuildRequiresMethod] = GetCheckCommandStationLimit,
             [kTechDataOverrideCoordsMethod] = OptionalAttachToFreeTechPoint,
             [kTechDataGhostModelClass] = "MarineGhostModel",
             [kTechDataMapName] = CommandStation.kMapName,
@@ -915,6 +992,8 @@ function BuildTechData()
         {
             [kTechDataId] = kTechId.ArmsLab,
             [kTechDataHint] = "ARMSLAB_HINT",
+            [kTechDataBuildRequiresMethod] = GetCheckArmsLimit,
+            [kTechDataBuildMethodFailedMessage] = "Limit Reached",
             [kTechDataGhostModelClass] = "MarineGhostModel",
             [kTechDataRequiresPower] = true,
             [kTechDataMapName] = ArmsLab.kMapName,
@@ -1562,6 +1641,8 @@ function BuildTechData()
         {
             [kTechDataId] = kTechId.DropJetpack,
             [kTechDataMapName] = Jetpack.kMapName,
+            [kTechDataBuildRequiresMethod] = GetCheckJetpackLimit,
+            [kTechDataBuildMethodFailedMessage] = "Limit Reached",
             [kTechDataDisplayName] = "JETPACK_DROP",
             [kTechIDShowEnables] = false,
             [kTechDataTooltipInfo] = "JETPACK_TOOLTIP",
@@ -1575,6 +1656,8 @@ function BuildTechData()
         {
             [kTechDataId] = kTechId.DropExosuit,
             [kTechDataMapName] = Exosuit.kMapName,
+            [kTechDataBuildRequiresMethod] = GetCheckExoSuitLimit,
+            [kTechDataBuildMethodFailedMessage] = "Limit Reached",
             [kTechDataDisplayName] = "EXOSUIT",
             [kTechIDShowEnables] = false,
             [kTechDataTooltipInfo] = "EXOSUIT_TOOLTIP",
@@ -2412,6 +2495,8 @@ function BuildTechData()
         {
             [kTechDataId] = kTechId.Drifter,
             [kTechDataBuildTime] = kDrifterHatchTime,
+            [kTechDataBuildMethodFailedMessage] = "Limit reached for Commander ents of this type",
+            [kTechDataBuildRequiresMethod] = GetCheckDrifterLimit,
             [kTechDataSupply] = kDrifterSupply,
             [kTechDataHint] = "DRIFTER_HINT",
             [kTechDataMapName] = Drifter.kMapName,
@@ -2431,6 +2516,8 @@ function BuildTechData()
         {
             [kTechDataId] = kTechId.DrifterEgg,
             [kTechDataRequiresInfestation] = true,
+            [kTechDataBuildRequiresMethod] = GetCheckDrifterLimit,
+            [kTechDataBuildMethodFailedMessage] = "Limit Reached",
             [kTechDataSupply] = kDrifterSupply,
             [kTechDataBuildTime] = kDrifterHatchTime,
             [kTechDataSupply] = kDrifterSupply,
@@ -2677,6 +2764,8 @@ function BuildTechData()
         {
             [kTechDataId] = kTechId.Veil,
             [kTechDataBioMass] = kVeilBiomass,
+            [kTechDataBuildMethodFailedMessage] = "Limit Reached",
+            [kTechDataBuildRequiresMethod] = GetCheckVeilLimit,
             [kTechDataHint] = "VEIL_HINT",
             [kTechDataGhostModelClass] = "AlienGhostModel",
             [kTechDataMapName] = Veil.kMapName,
@@ -2711,6 +2800,8 @@ function BuildTechData()
         {
             [kTechDataId] = kTechId.Spur,
             [kTechDataBioMass] = kSpurBiomass,
+            [kTechDataBuildRequiresMethod] = GetCheckSpurLimit,
+            [kTechDataBuildMethodFailedMessage] = "Limit Reached",
             [kTechDataHint] = "SPUR_HINT",
             [kTechDataGhostModelClass] = "AlienGhostModel",
             [kTechDataMapName] = Spur.kMapName,
@@ -2745,6 +2836,8 @@ function BuildTechData()
         {
             [kTechDataId] = kTechId.Shell,
             [kTechDataBioMass] = kShellBiomass,
+            [kTechDataBuildRequiresMethod] = GetCheckShellLimit,
+            [kTechDataBuildMethodFailedMessage] = "Limit Reached",
             [kTechDataHint] = "SHELL_HINT",
             [kTechDataGhostModelClass] = "AlienGhostModel",
             [kTechDataMapName] = Shell.kMapName,

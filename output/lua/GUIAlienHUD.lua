@@ -958,18 +958,6 @@ function GUIAlienHUD:Update(deltaTime)
     if self.teamResText:GetIsVisible() then
         self.teamResText:SetText(string.format(Locale.ResolveString("TEAM_RES"), math.floor(ScoreboardUI_GetTeamResources(kTeam2Index))))
     end
-
-    -- Update resource display
---     local resourceUpdate = {
---
---         PlayerUI_GetGameLengthTime(),
---         PlayerUI_GetFrontLength(),
---         PlayerUI_GetSiegeLength(),
---         PlayerUI_GetSideLength()
---
---     }
-
-    --self.resourceDisplay:UpdateFrontSiege(deltaTime, resourceUpdate)
     
 end
 

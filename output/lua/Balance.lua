@@ -14,9 +14,9 @@ Script.Load("lua/BalanceMisc.lua")
 
 -- Siege
 
-kFrontTime = 30 --debug
-kSiegeTime = 90 --debug
-kSideTime = 60
+kFrontTime = 10 --debug
+kSiegeTime = 20 --debug
+kSideTime = 15
 
 
 
@@ -41,7 +41,7 @@ kCorrodeMarineStructureArmorOnInfestation = true
 
 kInfestationCorrodeDamagePerSecond = 30
 
-kMaxSupply = 200
+kMaxSupply = 999
 kSupplyPerTechpoint = 100
 
 -- used as fallback

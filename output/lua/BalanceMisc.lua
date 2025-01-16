@@ -215,7 +215,7 @@ kLightShakeVariableSpeed = 30
 kUpgradedJetpackUseFuelRate = .19
 kJetpackingAccel = 0.8
 kJetpackUseFuelRate = .21
-kJetpackReplenishFuelRate = .11
+kJetpackReplenishFuelRate = .24
 
 -- Mines
 kNumMines = 1
@@ -293,7 +293,7 @@ kGoreVampirismScalar = 0.0183
 kUmbraRetainTime = 2.5
 
 kBellySlideCost = 20
-kLerkFlapEnergyCost = 3
+kLerkFlapEnergyCost = 2
 kFadeShadowStepCost = 11
 kChargeEnergyCost = 20 -- per second
 
@@ -335,8 +335,8 @@ kMaxWebLength = 8
 kMACSupply = 15
 kArmorySupply = 5
 kObservatorySupply = 25
-kARCSupply = 25
-kSentrySupply = 15
+kARCSupply = 20
+kSentrySupply = 8
 kSentryBatterySupply = 25
 kRoboticsFactorySupply = 10
 kInfantryPortalSupply = 0
@@ -346,10 +346,10 @@ kDrifterHoverHeight = 1
 kLerkHallucinationHoverHeight = 1.5
 
 kDrifterSupply = 5
-kWhipSupply = 30
-kCragSupply = 20
-kShadeSupply = 20
-kShiftSupply = 20
+kWhipSupply = 10
+kCragSupply = 10
+kShadeSupply = 10
+kShiftSupply = 10
 
 kBoneShieldHitpoints = 1000
 kBoneShieldActiveHitpointsRegenFactor = 0.5 -- Energy Regen is 50% slower than normal while boneshield is active
