@@ -13,16 +13,15 @@ function Gorge:InitWeapons()
 
     self:GiveItem(SpitSpray.kMapName)
     self:GiveItem(DropStructureAbility.kMapName)
-    
+    self:GiveItem(BileBomb.kMapName)
+    self:GiveItem(BabblerAbility.kMapName)
+
     self:SetActiveWeapon(SpitSpray.kMapName)
     
 end
 
-function Gorge:GetTierTwoTechId()
-    return kTechId.BabblerAbility
-end
 
-function Gorge:GetTierThreeTechId()
+function Gorge:GetTierOneTechId()
     return kTechId.BileBomb
 end
 

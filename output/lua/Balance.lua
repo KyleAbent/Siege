@@ -235,12 +235,12 @@ kSilenceCost = 0
 kAdrenalineCost = 0
 kCelerityCost = 0
 
-kPlayingTeamInitialTeamRes = 60
-kMaxTeamResources = 200
+kPlayingTeamInitialTeamRes = 200
+kMaxTeamResources = 999
 
-kMarineInitialIndivRes = 20
-kAlienInitialIndivRes = 15
-kCommanderInitialIndivRes = 0
+kMarineInitialIndivRes = 100
+kAlienInitialIndivRes = 100
+kCommanderInitialIndivRes = 100
 kMaxPersonalResources = 100
 
 kResourceTowerResourceInterval = 6
@@ -556,7 +556,7 @@ kMarineRespawnTime = 9
 
 kAlienSpawnTime = 10
 kEggGenerationRate = 13
-kAlienEggsPerHive = 2
+kAlienEggsPerHive = 6
 
 -- delay of a single upgrade level after alien respawn
 kUpgradeLevelDelayAtAlienRepawn = 4

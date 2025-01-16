@@ -7,50 +7,11 @@ SiegeGameRules.kMapName = "siege_gamerules"
 
 local networkVars =
 {
-    frontTimer = "integer",
-    sideTimer = "integer",
-    siegeTimer = "integer",
-    dynamicAdjustment = "integer",
-    countofpowerwhensetup = "integer",
-    countofpowercurrently = "integer",
 }
 
 -- Initialize game rules
 function SiegeGameRules:OnCreate()
-    NS2Gamerules.OnCreate(self)
-
-    -- Default timers
-    self.frontTimer = kFrontTime
-    self.sideTimer = kSideTime
-    self.siegeTimer = kSiegeTime
-    Print("SiegeGameRules initialized.")
-    Print("Front door time = " .. self.frontTimer)
-    Print("Side door time = " .. self.sideTimer)
-    Print("Siege door time = " .. self.siegeTimer)
-end
-
-function GameInfo:GetFrontTime()
-   return self.frontTimer
-end
-
-function GameInfo:SetFrontTime(time)
-    self.frontTimer = time
-end
-
-function GameInfo:GetSideTime()
-   return self.sideTimer
-end
-
-function GameInfo:SetSideTime(time)
-    self.sideTimer = time
-end
-
-function GameInfo:GetSiegeTime()
-   return self.siegeTimer
-end
-
-function GameInfo:SetSiegeTime(time)
-    self.siegeTimer = time
+     NS2Gamerules.OnCreate(self)
 end
 
 
@@ -91,15 +52,24 @@ end
 
 if Server then
 
-    --local origPostLoad = NS2Gamerules.OnMapPostLoad
     function SiegeGameRules:OnMapPostLoad()
-        --origPostLoad(self)
-        --Override to fix bugs?
         self:AddTimedCallback(function() GetLocationGraph() print("GetLocationgraph delay") end, 1)
         NS2Gamerules.OnMapPostLoad(self)
         Server.CreateEntity(Timer.kMapName)
         Print("Timer Created")
     end
+
+    function SiegeGameRules:ResetGame()
+        NS2Gamerules.ResetGame(self)
+       for _, door in ientitylist(Shared.GetEntitiesWithClassname("SiegeDoor")) do
+            door:OnReset()
+            Print("Resetting Door")
+       end
+       for _, timer in ientitylist(Shared.GetEntitiesWithClassname("Timer")) do
+            timer:OnReset()
+            Print("Resetting Timer")
+       end
+   end
 
 
 end

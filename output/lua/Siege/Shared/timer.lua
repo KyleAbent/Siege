@@ -32,6 +32,7 @@ end
 function Timer:GetInitialSiegeLength() 
     return self.initialSiegeLength
 end
+
 function Timer:OnReset() 
    self:TimerValues()
 end
@@ -76,6 +77,7 @@ function Timer:GetSiegeOpenBoolean()
     return self.siegeOpened
  end 
 end
+
 function Timer:GetFrontOpenBoolean()
  if not GetGamerules():GetGameStarted() then
     return true
@@ -83,12 +85,15 @@ function Timer:GetFrontOpenBoolean()
     return self.frontOpened
  end
 end
+
 function Timer:GetFrontLength()
  return self.FrontTimer 
 end
+
 function Timer:GetSiegeLength()
  return self.SiegeTimer 
 end
+
 local function OpenEightTimes(who)
     if not who then return end
    // for i = 1, math.max(9 / 2, 16) do
@@ -114,7 +119,7 @@ function Timer:OpenFrontDoors()
 --             StartSoundEffectForPlayer(Timer.kFrontDoorSound, player)
 --         end
 --     end
-    Print("Front Doors Opened at %s", Shared.GetTime())
+--     Print("Front Doors Opened at %s", Shared.GetTime()) <-- not shared get time, but round time
         
 end
 function Timer:OpenSiegeDoors()
@@ -125,7 +130,7 @@ function Timer:OpenSiegeDoors()
             OpenEightTimes(siegedoor) 
             end
        end
-   Print("Siege Doors Opened at %s", Shared.GetTime())
+--    Print("Siege Doors Opened at %s", Shared.GetTime()) <-- not shared get time, but round time
 --       if GetGamerules():GetGameStarted() then
 --             for _, player in ientitylist(Shared.GetEntitiesWithClassname("Player")) do
 --             StartSoundEffectForPlayer(Timer.kSiegeDoorSound, player)
@@ -138,8 +143,8 @@ function Timer:OpenSideDoors()
        for index, sidedoor in ientitylist(Shared.GetEntitiesWithClassname("SideDoor")) do
             OpenEightTimes(sidedoor) 
        end
-     Print("Side Doors Opened at %s", Shared.GetTime())
-     Print("Side Door Timer is %s", self.SideTimer)
+--      Print("Side Doors Opened at %s", Shared.GetTime()) <-- not shared get time, but round time 
+--      Print("Side Door Timer is %s", self.SideTimer)
 --        if GetGamerules():GetGameStarted() then
 --         GetGamerules():DisplaySide()
 --         end
@@ -150,36 +155,45 @@ function Timer:AdjustFrontTimer(time)
         self.FrontTimer = self.FrontTimer + (time)
         Print("New front timer is %s", self.FrontTimer)
 end
+
 function Timer:AdjustSiegeTimer(time)
         Print("Old siege timer is %s", self.SiegeTimer)
         self.SiegeTimer = self.SiegeTimer + (time)
         Print("New Siege timer is %s", self.SiegeTimer)
 end
+
 function Timer:GetIsSiegeOpen(gameinfo)
-            if not gameinfo then
-                 gameinfo = GetGameInfoEntity()
-            end
-           local gamestarttime = gameinfo:GetStartTime()
-           local gameLength = Shared.GetTime() - gamestarttime
-           return  gameLength >= self.SiegeTimer
+    if not gameinfo then
+        gameinfo = GetGameInfoEntity()
+    end
+    local gamestarttime = gameinfo:GetStartTime()
+--     local gamestarttime = self.gameStartTime
+    local gameLength = Shared.GetTime() - gamestarttime
+--     Print("GameStartTime is %s and GameLength is %s", gamestarttime, gameLength)
+    return  gameLength >= self.SiegeTimer
 end
 
 function Timer:GetIsFrontOpen(gameinfo)
-            if not gameinfo then
-                 gameinfo = GetGameInfoEntity()
-            end
-           local gamestarttime = gameinfo:GetStartTime()
-           local gameLength = Shared.GetTime() - gamestarttime
-           return  gameLength >= self.FrontTimer
+    if not gameinfo then
+         gameinfo = GetGameInfoEntity()
+    end
+    local gamestarttime = gameinfo:GetStartTime()
+--     local gamestarttime = self.gameStartTime
+    local gameLength = Shared.GetTime() - gamestarttime
+--     Print("GameStartTime is %s and GameLength is %s", gamestarttime, gameLength)
+    return  gameLength >= self.FrontTimer
 end
+
 function Timer:GetIsSideOpen(gameinfo)
-            if not gameinfo then
-                 gameinfo = GetGameInfoEntity()
-            end
-           local gamestarttime = gameinfo:GetStartTime()
-           local gameLength = Shared.GetTime() - gamestarttime
-           return  gameLength >= self.SideTimer
+    if not gameinfo then
+         gameinfo = GetGameInfoEntity()
+    end
+    local gamestarttime = gameinfo:GetStartTime()
+--     local gamestarttime = self.gameStartTime
+    local gameLength = Shared.GetTime() - gamestarttime
+    return  gameLength >= self.SideTimer
 end
+
 if Server then
     
      function Timer:OnUpdate(deltatime)
@@ -191,12 +205,12 @@ if Server then
                     if not self.siegeOpened then self:SiegeDoorTimer(gameinfo) end   
                     if not self.sideOpened then self:SideDoorTimer(gameinfo) end  
                     self.timelasttimerup = Shared.GetTime()  
-                    if self.frontOpened  and not self.siegeOpened then
-                        if not self.timeLastTimeCheck or self.timeLastTimeCheck + math.random(30,45) <= Shared.GetTime() then
-                         --   self:TimeCheck()
-                            self.timeLastTimeCheck = Shared.GetTime()
-                         end
-                    end
+--                     if self.frontOpened  and not self.siegeOpened then
+--                         if not self.timeLastTimeCheck or self.timeLastTimeCheck + math.random(30,45) <= Shared.GetTime() then
+--                          --   self:TimeCheck()
+--                             self.timeLastTimeCheck = Shared.GetTime()
+--                          end
+--                     end
                 end
           end
      end

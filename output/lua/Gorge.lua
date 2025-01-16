@@ -174,6 +174,7 @@ function Gorge:GetMovementSpecialCooldown()
     return cooldown
 end
 
+
 function Gorge:GetMovementSpecialEnergyCost()
     return kBellySlideCost
 end

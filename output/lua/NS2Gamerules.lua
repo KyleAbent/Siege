@@ -143,6 +143,7 @@ if Server then
                 self.gameStartTime = Shared.GetTime()
                 
                 self.gameInfo:SetStartTime(self.gameStartTime)
+--                 Print("Setting Game Start Time at %s", self.gameStartTime)
                 
                 SendTeamMessage(self.team1, kTeamMessageTypes.GameStarted)
                 SendTeamMessage(self.team2, kTeamMessageTypes.GameStarted)
@@ -173,7 +174,10 @@ if Server then
     end
 
     function NS2Gamerules:OnCreate()
-
+        if not self:isa("SiegeGameRules") then
+            DestroyEntity(self)
+            return --WHY!?!?!?
+        end
         -- Calls SetGamerules()
         Gamerules.OnCreate(self)
         
@@ -198,7 +202,7 @@ if Server then
         self.spectatorTeam:Initialize("Spectator", kSpectatorIndex)
         
         self.gameInfo = Server.CreateEntity(GameInfo.kMapName)
-        
+        Print("Creating gameinfo entity")
         self:SetGameState(kGameState.NotStarted)
         
         self.allTech = false
@@ -230,7 +234,9 @@ if Server then
     end
 
     function NS2Gamerules:OnDestroy()
-
+        if not self:isa("SiegeGameRules") then
+            return
+        end
         self.team1:Uninitialize()
         self.team1 = nil
         self.team2:Uninitialize()

@@ -88,33 +88,31 @@ function SiegeDoor:OnUpdate(deltaTime)
 end
 
 
-function SiegeDoor:CloseLock()    
+function SiegeDoor:CloseLock()
+
  self:SetOrigin(self.savedOrigin)
  self.opened = false
  self.opening = false
- self:MakeSurePlayersCanGoThroughWhenMoving() 
- 
-         -- if Client then 
-         
-    --  if self.effect then
-    --    Client.DestroyCinematic(self.effect)
-    --    self.cinematic = nil
-        
-     --   end
-     --   end
+ self:MakeSurePlayersCanGoThroughWhenMoving()
+
 end
+
 function SiegeDoor:GetIsMapEntity()
-return true
+    return true
 end
+
 function SiegeDoor:GetIsOpen()    
-return self.opened
+    return self.opened
 end
+
 function SiegeDoor:HasOpened()    
-return self.opened
+    return self.opened
 end
+
 function SiegeDoor:GetIsLocked()    
-return self.opened
+    return self.opened
 end
+
 function SiegeDoor:MakeSurePlayersCanGoThroughWhenMoving()
                 self:UpdateModelCoords()
                 self:UpdatePhysicsModel()
@@ -123,6 +121,7 @@ function SiegeDoor:MakeSurePlayersCanGoThroughWhenMoving()
                end  
                self:MarkPhysicsDirty()    
 end
+
 function SiegeDoor:UpdatePosition(waypointreached) 
      local waypoint = self.savedOrigin + Vector(0, 9,0)//kDoorMoveUpVect, 0)
       -- Print("Waypoint difference is %s", waypoint - self:GetOrigin())
@@ -147,7 +146,8 @@ function SiegeDoor:UpdatePosition(waypointreached)
      
     return self.opened and not waypointreached
             
-end 
+end
+
 function SiegeDoor:OnAdjustModelCoords(modelCoords)
 
     local coords = modelCoords
@@ -159,10 +159,12 @@ function SiegeDoor:OnAdjustModelCoords(modelCoords)
     return coords
     
 end
-function SiegeDoor:OnReset()
-self:CloseLock()
 
+function SiegeDoor:OnReset()
+    Print("Resetting SiegeDoor")
+    self:CloseLock()
 end
+
 Shared.LinkClassToMap("SiegeDoor", SiegeDoor.kMapName, networkVars)
 
 class 'FrontDoor' (SiegeDoor)

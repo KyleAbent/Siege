@@ -425,7 +425,7 @@ local function UnlockAbility(forAlien, techId)
 end
 
 local function LockAbility(forAlien, techId)
-
+    Print("LockAbility callled for techId: %s", techId)
     local mapName = LookupTechData(techId, kTechDataMapName)    
     if mapName and forAlien:GetIsAlive() then
     
@@ -467,6 +467,22 @@ local function CheckHasPrereq(teamNumber, techId)
 
 end
 
+function GetHiveAmount()
+
+    local hives = 0
+       for _, hive in ientitylist(Shared.GetEntitiesWithClassname("Hive")) do
+            if hive:GetIsBuilt() then hives = hives + 1 end
+       end
+
+       if GetGamerules():GetGameState() == kGameState.NotStarted or GetGamerules():GetGameState() == kGameState.PreGame then
+      hives = hives + 3
+            end
+
+       if GetGamerules():GetAllTech() then hives = hives + 3 end
+
+       return hives
+end
+
 function UpdateAbilityAvailability(forAlien, tierOneTechId, tierTwoTechId, tierThreeTechId)
 
     local time = Shared.GetTime()
@@ -474,38 +490,57 @@ function UpdateAbilityAvailability(forAlien, tierOneTechId, tierTwoTechId, tierT
 
         local team = forAlien:GetTeam()
         if team and team.GetTechTree then
-        
-            local hasOneHiveNow = GetGamerules():GetAllTech() or (tierOneTechId ~= nil and tierOneTechId ~= kTechId.None and GetIsTechUnlocked(forAlien, tierOneTechId))
+--             Print("A")
+            numberHives = GetHiveAmount()
+            local hasOneHiveNow = false
+            local hasTwoHivesNow =  false
+            local hasThreeHivesNow = false
+--             Print("Number of Hives: %s", numberHives)
+            if numberHives >= 1 then
+                hasOneHiveNow = true
+            end
+            if numberHives >= 2 then
+                hasTwoHivesNow = true
+            end
+            if numberHives >= 3 then
+                hasThreeHivesNow = true
+            end
+
             local oneHive = forAlien.oneHive
             -- Don't lose abilities unless you die.
             forAlien.oneHive = forAlien.oneHive or hasOneHiveNow
-
             if forAlien.oneHive then
                 UnlockAbility(forAlien, tierOneTechId)
+--                 Print("B - UnLockAbility - tierOneTechId is %s", tierOneTechId)
             else
                 LockAbility(forAlien, tierOneTechId)
+--                 Print("C")
             end
             
-            local hasTwoHivesNow = GetGamerules():GetAllTech() or (tierTwoTechId ~= nil and tierTwoTechId ~= kTechId.None and GetIsTechUnlocked(forAlien, tierTwoTechId))
+
             local hadTwoHives = forAlien.twoHives
             -- Don't lose abilities unless you die.
             forAlien.twoHives = forAlien.twoHives or hasTwoHivesNow
 
             if forAlien.twoHives then
                 UnlockAbility(forAlien, tierTwoTechId)
+--                 Print("D")
             else
                 LockAbility(forAlien, tierTwoTechId)
+--                 Print("E")
             end
             
-            local hasThreeHivesNow = GetGamerules():GetAllTech() or (tierThreeTechId ~= nil and tierThreeTechId ~= kTechId.None and GetIsTechUnlocked(forAlien, tierThreeTechId))
+
             local hadThreeHives = forAlien.threeHives
             -- Don't lose abilities unless you die.
             forAlien.threeHives = forAlien.threeHives or hasThreeHivesNow
 
             if forAlien.threeHives then
                 UnlockAbility(forAlien, tierThreeTechId)
+--                 Print("F")
             else
                 LockAbility(forAlien, tierThreeTechId)
+--                 Print("G")
             end
             
         end

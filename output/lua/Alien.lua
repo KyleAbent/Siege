@@ -210,7 +210,8 @@ function Alien:OnInitialized()
         self.maxArmor = self.armor
 
         InitMixin(self, InfestationTrackerMixin)
-        UpdateAbilityAvailability(self, self:GetTierOneTechId(), self:GetTierTwoTechId(), self:GetTierThreeTechId())
+--         UpdateAbilityAvailability(self, self:GetTierOneTechId(), self:GetTierTwoTechId(), self:GetTierThreeTechId())
+        self:AddTimedCallback(function() UpdateAbilityAvailability(self, self:GetTierOneTechId(), self:GetTierTwoTechId(), self:GetTierThreeTechId())  end, .8)
 
         -- This Mixin must be inited inside this OnInitialized() function.
         if not HasMixin(self, "MapBlip") then

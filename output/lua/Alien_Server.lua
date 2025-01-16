@@ -9,6 +9,11 @@
 
 Script.Load("lua/AlienUpgradeManager.lua")
 
+function Alien:HiveCompleteSoRefreshTechsManually()
+--     Print("HiveCompleteSoRefreshTechsManually")
+   UpdateAbilityAvailability(self, self:GetTierOneTechId(), self:GetTierTwoTechId(), self:GetTierThreeTechId())
+end
+
 function Alien:TriggerEnzyme(duration)
 
     if not self:GetIsOnFire() and not self:GetElectrified() then
@@ -48,9 +53,10 @@ function Alien:OnProcessMove(input)
     -- In rare cases, Player.OnProcessMove() above may cause this entity to be destroyed.
     -- The below code assumes the player is not destroyed.
     if not self:GetIsDestroyed() then
-    
+
+        --Why is this spammed every 0.5 seconds? Jesus.
         -- Calculate two and three hives so abilities for abilities
-        UpdateAbilityAvailability(self, self:GetTierOneTechId(), self:GetTierTwoTechId(), self:GetTierThreeTechId())
+        --UpdateAbilityAvailability(self, self:GetTierOneTechId(), self:GetTierTwoTechId(), self:GetTierThreeTechId())
 
         self.enzymed = self.timeWhenEnzymeExpires > Shared.GetTime()
         self.electrified = self.timeElectrifyEnds > Shared.GetTime()

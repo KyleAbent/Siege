@@ -490,8 +490,13 @@ end
 
 function GetGameInfoEntity()
 
+--     gameulresenties = Shared.GetEntitiesWithClassname("NS2Gamerules")
+--     Print("Number of NS2Gamerules entities: %d", gameulresenties:GetSize())
+
     local entityList = Shared.GetEntitiesWithClassname("GameInfo")
     if entityList:GetSize() > 0 then
+        --what did I do to make 2? lol
+--         Print("Number of GameInfo entities: %d", entityList:GetSize())
         return (entityList:GetEntityAtIndex(0))
     end
 

@@ -137,6 +137,23 @@ function Hive:OnCommanderLogin( commanderPlayer, forced )
 
 end
 
+function Hive:GetGameStartedHive()
+            local gameRules = GetGamerules()
+            if gameRules then
+               if gameRules:GetGameStarted() then
+                   return true
+               end
+            end
+            return false
+end
+
+function Hive:UpdateAliensWeaponsManually() ///Seriously this makes more sense than spamming some complicated formula every 0.5 seconds no?
+    if not self:GetGameStartedHive() then return end
+     for _, alien in ientitylist(Shared.GetEntitiesWithClassname("Alien")) do
+            alien:HiveCompleteSoRefreshTechsManually()
+      end
+end
+
 function Hive:OnDestroy()
 
     local team = self:GetTeam()
@@ -146,6 +163,7 @@ function Hive:OnDestroy()
     end
 
     CommandStructure.OnDestroy(self)
+    self:UpdateAliensWeaponsManually()
 
 end
 
@@ -467,6 +485,7 @@ end
 function Hive:OnKill(attacker, doer, point, direction)
 
     CommandStructure.OnKill(self, attacker, doer, point, direction)
+    self:UpdateAliensWeaponsManually()
 
     --Destroy the attached evochamber
     local evoChamber = self:GetEvolutionChamber()
@@ -676,9 +695,25 @@ function Hive:SetAttached(structure)
 
 end
 
+function GetHiveAmount()
+
+    local hives = 0
+       for _, hive in ientitylist(Shared.GetEntitiesWithClassname("Hive")) do
+            if hive:GetIsBuilt() then hives = hives + 1 end
+       end
+
+       if GetGamerules():GetGameState() == kGameState.NotStarted or GetGamerules():GetGameState() == kGameState.PreGame then
+      hives = hives + 3
+            end
+
+       if GetGamerules():GetAllTech() then hives = hives + 3 end
+
+       return hives
+end
+
 function Hive:OnConstructionComplete()
 
-    self.bioMassLevel = 1
+    self.bioMassLevel = 3
 
     -- Play special tech point animation at same time so it appears that we bash through it.
     local attachedTechPoint = self:GetAttached()
@@ -706,6 +741,31 @@ function Hive:OnConstructionComplete()
     for _, cyst in ipairs(cysts) do
         cyst:ChangeParent(self)
     end
+
+--     local hiveCount = GetHiveAmount()
+
+    self:UpdateAliensWeaponsManually()
+--     if GetGamerules():GetGameStarted() then
+--         self:OnResearchComplete(kTechId.ResearchBioMassOne)
+--         self:OnResearchComplete(kTechId.ResearchBioMassTwo)
+--         self:OnResearchComplete(kTechId.ResearchBioMassThree)
+--     end
+--     if hiveCount == 2 then
+--         self:OnResearchComplete(kTechId.BileBomb)
+--         self:OnResearchComplete(kTechId.MetabolizeEnergy)
+--         self:OnResearchComplete(kTechId.Leap)
+--         self:OnResearchComplete(kTechId.MetabolizeHealth)
+--         self:OnResearchComplete(kTechId.Umbra)
+--         self:OnResearchComplete(kTechId.Spores)
+--         self:OnResearchComplete(kTechId.BoneShield)
+--     end
+--     if hiveCount == 3 then
+--         self:OnResearchComplete(kTechId.BileBomb)
+--         self:OnResearchComplete(kTechId.MetabolizeEnergy)
+--         self:OnResearchComplete(kTechId.Leap)
+--         self:OnResearchComplete(kTechId.Stab)
+--     end
+
 end
 
 function Hive:GetIsPlayerValidForCommander(player)

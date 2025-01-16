@@ -92,6 +92,8 @@ function Gamerules:ResetGame()
     -- Convert to a table as entities are destroyed here and the EntityList will automatically
     -- update when they are destroyed which is bad for iteration.
     local entityTable = EntityListToTable(Shared.GetEntitiesWithClassname("Entity"))
+    Print("ResetGame - entity count: %s", #entityTable)
+    Print("entityTable: %s", entityTable)
     for _, entity in ipairs(entityTable) do
 
         -- Don't reset/delete gamerules!
