@@ -270,6 +270,8 @@ local networkVars =
 
     communicationStatus = "enum kPlayerCommunicationStatus",
 
+    gravity = "float (-5 to 5 by 1)",
+
 }
 
 ------------
@@ -397,6 +399,7 @@ function Player:OnCreate()
 
     self.concedeSettingsIndex = 1
     self.callingCard = kDefaultPlayerCallingCard
+    self.gravity = 1
 
 end
 
@@ -1135,8 +1138,15 @@ function Player:ModifyGravityForce(gravityTable)
 
     if self:GetIsOnGround() then
         gravityTable.gravity = 0
+    elseif self.gravity ~= 1 then
+        gravityTable.gravity = gravityTable.gravity * self.gravity
     end
 
+end
+
+function Player:SetGravity(gravity)
+--     Print("Set Gravity to %s", gravity)
+    self.gravity = gravity
 end
 
 function Player:OnUseTarget(target)

@@ -1,6 +1,46 @@
 <editor>
 <classes>
+   
+<class name="gravity_section" placeable="true">
+    <parent>trigger</parent>
     
+    <model>
+        <file>models/system/editor/location.model</file>
+        <scale>scale</scale>
+    </model>
+    
+    <size>
+        <scale>scale</scale>
+    </size>
+
+    <!-- Base parameters -->
+    <parameter name="name" type="string" label="Name" help="Name of the vent location shown to players"/>
+    <parameter name="scale" type="vector" label="Scale" default="1.0, 1.0, 1.0" help="Size of the vent area"/>
+
+    <!-- Vent effect parameters -->
+    <parameter name="gravity_amount" type="real" label="Gravity Multiplier" help="Multiplier of Gravity (0.0-1.0)" default="1"/>
+</class>
+ 
+<class name="alien_vent" placeable="true">
+    <parent>trigger</parent>
+    
+    <model>
+        <file>models/system/editor/location.model</file>
+        <scale>scale</scale>
+    </model>
+    
+    <size>
+        <scale>scale</scale>
+    </size>
+
+    <!-- Base parameters -->
+    <parameter name="name" type="string" label="Name" help="Name of the vent location shown to players"/>
+    <parameter name="scale" type="vector" label="Scale" default="1.0, 1.0, 1.0" help="Size of the vent area"/>
+    <parameter name="showOnMinimap" type="boolean" label="Show On Minimap" help="Show vent location on minimap" default="true"/>
+
+    <!-- Vent effect parameters -->
+    <parameter name="slowAmount" type="real" label="Marine Slow Amount" help="How much to slow marines (0.0-1.0)" default="0.3"/>
+</class>
 
 <class name="breakable_door" placeable="true">		
 		<parent>logic_toggle_base</parent>

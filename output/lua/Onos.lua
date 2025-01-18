@@ -427,12 +427,12 @@ function Onos:PreUpdateMove(input, runningPrediction)
         self.crouching = self.autoCrouching
     end
     
-    if Client and self == Client.GetLocalPlayer() then
-    
-        -- Lower mouse sensitivity when charging, only affects the local player.
-        Client.SetMouseSensitivityScalarX(manuverability)
-        
-    end
+--     if Client and self == Client.GetLocalPlayer() then
+--
+--         -- Lower mouse sensitivity when charging, only affects the local player.
+--         Client.SetMouseSensitivityScalarX(manuverability)
+--
+--     end
     
 end
 

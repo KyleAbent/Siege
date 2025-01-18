@@ -167,6 +167,8 @@ function XenocideLeap:OnProcessMove(input)
 
                 player:Kill(player, self)
 
+                CreateEntity(Rupture.kMapName, xenoOrigin, 2)
+
                 if self.XenocideSoundName then
                     self.XenocideSoundName:Stop()
                     self.XenocideSoundName = nil

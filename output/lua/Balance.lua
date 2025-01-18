@@ -468,7 +468,7 @@ kLerkBiteEnergyCost = 5
 kLerkBiteDamageType = kDamageType.Normal
 
 kUmbraEnergyCost = 27
-kUmbraMaxRange = 17
+kUmbraMaxRange = 50
 kUmbraDuration = 2.5
 kUmbraRadius = 4
 
@@ -490,7 +490,7 @@ kSpikesPerShot = 1
 kSporesDamageType = kDamageType.Gas
 kSporesDustDamagePerSecond = 15
 kSporesDustFireDelay = 0.36
-kSporesMaxRange = 17
+kSporesMaxRange = 50
 kSporesDustEnergyCost = 27
 kSporesDustCloudRadius = 4
 kSporesDustCloudLifetime = 4

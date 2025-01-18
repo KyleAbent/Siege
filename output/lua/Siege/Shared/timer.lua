@@ -143,7 +143,7 @@ function Timer:OpenSideDoors()
        for index, sidedoor in ientitylist(Shared.GetEntitiesWithClassname("SideDoor")) do
             OpenEightTimes(sidedoor) 
        end
---      Print("Side Doors Opened at %s", Shared.GetTime()) <-- not shared get time, but round time 
+--      Print("Side Doors Opened at %s", Shared.GetTime()) <-- not shared get time, but round time
 --      Print("Side Door Timer is %s", self.SideTimer)
 --        if GetGamerules():GetGameStarted() then
 --         GetGamerules():DisplaySide()

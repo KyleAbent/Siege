@@ -277,6 +277,12 @@ local function UpdateNanoArmor(self)
     return true
 end
 
+function Marine:SetSlowAmount(slowAmount)
+    Print("Marine:SetSlowAmount(%s)", slowAmount)
+    self.slowAmount = slowAmount
+end
+
+
 function Marine:GetCanJump()
     return ( self:GetIsOnGround() or self:GetIsOnLadder() )
 end

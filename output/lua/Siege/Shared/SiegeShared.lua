@@ -5,4 +5,5 @@ Script.Load("lua/Siege/Shared/timer.lua")
 Script.Load("lua/Siege/Shared/Doors.lua")
 Script.Load("lua/Siege/Shared/BreakableDoor.lua")
 Script.Load("lua/Siege/Shared/AntiExploit.lua")
-
+Script.Load("lua/Siege/Shared/AlienVent.lua")
+Script.Load("lua/Siege/Shared/GravityTrigger.lua")

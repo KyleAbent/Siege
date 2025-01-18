@@ -161,7 +161,7 @@ function SiegeDoor:OnAdjustModelCoords(modelCoords)
 end
 
 function SiegeDoor:OnReset()
-    Print("Resetting SiegeDoor")
+--     Print("Resetting SiegeDoor")
     self:CloseLock()
 end
 
