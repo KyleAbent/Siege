@@ -40,6 +40,8 @@
 
     <!-- Vent effect parameters -->
     <parameter name="slowAmount" type="real" label="Marine Slow Amount" help="How much to slow marines (0.0-1.0)" default="0.3"/>
+    <parameter name="enablePush" type="boolean" label="Enable Push" help="Push marines out of the vent" default="false"/>
+    <parameter name="pushForce" type="real" label="Push Force" help="Force to push marines with when push is enabled" default="10"/>
 </class>
 
 <class name="breakable_door" placeable="true">		
