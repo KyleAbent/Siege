@@ -73,7 +73,7 @@ kClogsPerHive = 10
 kNumWebsPerGorge = 3
 kCystInfestDuration = 37.5
 
-kSentriesPerBattery = 3
+kSentriesPerBattery = 27
 kSentryConfuseDuration = 8
 kSentryAttackEffectInterval = 0.2
 kSentryTargetAcquireTime = 0.15

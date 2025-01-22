@@ -126,6 +126,11 @@ GUIMarineHUD.kBackgroundColor = Color(0x01 / 0xFF, 0x8F / 0xFF, 0xFF / 0xFF, 1)
 
 -- animation callbacks
 
+
+GUIMarineHUD.kSideTimerPos  = Vector(30, 120, 0)
+GUIMarineHUD.kFrontTimerPos = Vector(30, 150, 0)
+GUIMarineHUD.kSiegeTimerPos = Vector(30, 180, 0)
+
 function AnimFadeIn(scriptHandle, itemHandle)
     itemHandle:FadeIn(1, nil, AnimateLinear, AnimFadeOut)
 end
@@ -146,6 +151,9 @@ end
 function GUIMarineHUD:Initialize()
 
     GUIAnimatedScript.Initialize(self)
+
+    self.debugPrinted = false
+
 
     self.cachedHudDetail = Client.GetHudDetail()
     
@@ -287,6 +295,40 @@ function GUIMarineHUD:Initialize()
     self.background:AddChild(self.teamResText)
     
     self.commanderNameIsAnimating = nil
+
+
+    self.sideTimer = self:CreateAnimatedTextItem()
+    self.sideTimer:SetFontName(GUIMarineHUD.kCommanderFontName )
+    self.sideTimer:SetAnchor(GUIItem.Left, GUIItem.Center)
+    self.sideTimer:SetScale(GetScaledVector() * 1.15)
+    self.sideTimer:SetTextAlignmentX(GUIItem.Align_Min)
+    self.sideTimer:SetTextAlignmentY(GUIItem.Align_Min)
+    self.sideTimer:SetPosition(GUIScale(GUIMarineHUD.kSideTimerPos))
+    self.sideTimer:SetColor(Color(1, 1, 1, 1))
+    self.sideTimer:SetText("Side: --:--")
+    self.background:AddChild(self.sideTimer)
+
+    self.frontTimer = self:CreateAnimatedTextItem()
+    self.frontTimer:SetFontName(GUIMarineHUD.kCommanderFontName )
+    self.frontTimer:SetAnchor(GUIItem.Left, GUIItem.Center)
+    self.frontTimer:SetScale(GetScaledVector()*1.15)
+    self.frontTimer:SetTextAlignmentX(GUIItem.Align_Min)
+    self.frontTimer:SetTextAlignmentY(GUIItem.Align_Min)
+    self.frontTimer:SetPosition(GUIScale(GUIMarineHUD.kFrontTimerPos))
+    self.frontTimer:SetColor(Color(1, 1, 1, 1))
+    self.frontTimer:SetText("Front: --:--")
+    self.background:AddChild(self.frontTimer)
+
+    self.siegeTimer = self:CreateAnimatedTextItem()
+    self.siegeTimer:SetFontName(GUIMarineHUD.kCommanderFontName )
+    self.siegeTimer:SetAnchor(GUIItem.Left, GUIItem.Center)
+    self.siegeTimer:SetScale(GetScaledVector()*1.15)
+    self.siegeTimer:SetTextAlignmentX(GUIItem.Align_Min)
+    self.siegeTimer:SetTextAlignmentY(GUIItem.Align_Min)
+    self.siegeTimer:SetPosition(GUIScale(GUIMarineHUD.kSiegeTimerPos))
+    self.siegeTimer:SetColor(Color(1, 1, 1, 1))
+    self.siegeTimer:SetText("Siege: --:--")
+    self.background:AddChild(self.siegeTimer)
     
     UpdateItemsGUIScale(self)
     
@@ -312,6 +354,9 @@ function GUIMarineHUD:Initialize()
     -- Fix bug where weapon/armor upgrade icons would display with the wrong coords on res change
     self:ShowNewWeaponLevel(PlayerUI_GetWeaponLevel())
     self:ShowNewArmorLevel(PlayerUI_GetArmorLevel())
+
+
+
 
 end
 
@@ -498,6 +543,10 @@ function GUIMarineHUD:SetInventoryDisplayVisible(visible)
 end
 
 function GUIMarineHUD:Reset()
+
+    self.sideTimer:SetIsVisible(true)
+    self.frontTimer:SetIsVisible(true)
+    self.siegeTimer:SetIsVisible(true)
 
     local minimap = GetAdvancedOption("minimap")
 
@@ -949,8 +998,65 @@ function GUIMarineHUD:Update(deltaTime)
 --         PlayerUI_GetSideLength()
 --     }
 
-    --self.resourceDisplay:UpdateFrontSiege(deltaTime, resourceUpdate)
-    
+   if not self.debugPrinted then
+        Print("Timer status:")
+        Print("Side timer exists: " .. tostring(self.sideTimer ~= nil))
+        Print("Front timer exists: " .. tostring(self.frontTimer ~= nil))
+        Print("Siege timer exists: " .. tostring(self.siegeTimer ~= nil))
+        self.debugPrinted = true
+    end
+
+    if self.sideTimer and self.frontTimer and self.siegeTimer then
+        local gameLength = PlayerUI_GetGameLengthTime() or 0
+        local sideLength = PlayerUI_GetSideLength()
+        local frontLength = PlayerUI_GetFrontLength()
+        local siegeLength = PlayerUI_GetSiegeLength()
+
+        -- Side Timer
+        if sideLength then
+            local sideRemain = math.max(0, sideLength - gameLength)
+            local sideMinutes = math.floor(sideRemain / 60)
+            local sideSeconds = math.floor(sideRemain % 60)
+            if sideRemain > 0 then
+                self.sideTimer:SetText(string.format("Side: %d:%02d", sideMinutes, sideSeconds))
+                self.sideTimer:SetColor(Color(1, 1, 1, 1))
+            else
+                self.sideTimer:SetText("Side: OPEN")
+                self.sideTimer:SetColor(Color(0, 1, 0, 1))
+            end
+        end
+
+        -- Front Timer
+        if frontLength then
+            local frontRemain = math.max(0, frontLength - gameLength)
+            local frontMinutes = math.floor(frontRemain / 60)
+            local frontSeconds = math.floor(frontRemain % 60)
+            if frontRemain > 0 then
+                self.frontTimer:SetText(string.format("Front: %d:%02d", frontMinutes, frontSeconds))
+                self.frontTimer:SetColor(Color(1, 1, 1, 1))
+            else
+                self.frontTimer:SetText("Front: OPEN")
+                self.frontTimer:SetColor(Color(0, 1, 0, 1))
+            end
+        end
+
+        -- Siege Timer
+        if siegeLength then
+            local siegeRemain = math.max(0, siegeLength - gameLength)
+            local siegeMinutes = math.floor(siegeRemain / 60)
+            local siegeSeconds = math.floor(siegeRemain % 60)
+            if siegeRemain > 0 then
+                self.siegeTimer:SetText(string.format("Siege: %d:%02d", siegeMinutes, siegeSeconds))
+                self.siegeTimer:SetColor(Color(1, 1, 1, 1))
+            else
+                self.siegeTimer:SetText("Siege: OPEN")
+                self.siegeTimer:SetColor(Color(0, 1, 0, 1))
+            end
+        end
+    else
+        Print("Error: Side, Front, or Siege timer not found")
+    end
+
 end
 
 function GUIMarineHUD:UpdatePowerIcon(powerState)
