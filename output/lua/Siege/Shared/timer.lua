@@ -19,6 +19,11 @@ local networkVars =
 }
 
 function Timer:TimerValues()
+
+    gameinfo = GetGameInfoEntity()
+    local kSiegeTime = gameinfo:GetSiegeTime()
+    local kFrontTime = gameinfo:GetFrontTime()
+    local kSideTime = gameinfo:GetSideTime()
    self.SiegeTimer = kSiegeTime 
    self.FrontTimer = kFrontTime
     self.SideTimer = kSideTime

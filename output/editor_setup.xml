@@ -79,7 +79,6 @@
 
         <parameter name="scale" type="vector" label="scale" default="1.0, 1.0, 1.0"/>
       <parameter name="model" type="file" label="model" default="models/props/eclipse/eclipse_wallmodse_02_door.model" filter="*.model"/>
-	<parameter name="timer" type="real" label="Timer" help=" 60 seconds = 1 minute ;) - If set to 0 then it will default to 5ish minutes " default="0.0"/>
 	<parameter name="shortenTimer" type="boolean" label="ShortenTimer" help="Shorts timer by random 50%-80%. By default 5-7min front timer with shortened timer enabled due to recent changes of having autobuild and such to get rid of long wait times" default="true"/>
 
 
@@ -99,7 +98,6 @@
         </size>
         <parameter name="scale" type="vector" label="scale" default="1.0, 1.0, 1.0"/>
 	<parameter name="model" type="file" label="model" default="models/props/eclipse/eclipse_wallmodse_02_door.model" filter="*.model"/>
-	<parameter name="timer" type="real" label="Timer" help=" 60 seconds = 1 minute ;) - If set to 0 then it will default to 5ish minutes " default="0.0"/>
       
 				
     </class>
@@ -121,7 +119,6 @@
         </size>
         <parameter name="scale" type="vector" label="scale" default="1.0, 1.0, 1.0"/>
           <parameter name="model" type="file" label="model" default="models/props/eclipse/eclipse_wallmodse_02_door.model" filter="*.model"/>
-   	<parameter name="timer" type="real" label="Timer" default="420.0"/>
       
 
 
@@ -649,8 +646,9 @@
 <class name="siege_gamerules" label="Use Siege mode gameplay">
     <parent>gamerules</parent>
 
-    <parameter name="frontDoorTime" type="float" label="Front Door Time" help="Time in seconds when the front door opens." default="60" />
-    <parameter name="siegeDoorTime" type="float" label="Siege Door Time" help="Time in seconds when the siege door opens." default="180" />
+    <parameter name="frontDoorTime" type="integer" label="Front Door Time" help="Time in seconds when the front door opens (Default: 300 - 5 minutes)" default="300" />
+    <parameter name="siegeDoorTime" type="integer" label="Siege Door Time" help="Time in seconds when the siege door opens (Default: 600 - 15 minutes)" default="900" />
+    <parameter name="sideDoorTime" type="integer" label="Side Door Time" help="Time in seconds when the side door opens (Default: 420 - 7 minutes)" default="420" />
 
     <model>
         <file>models/system/editor/gamerules.model</file>

@@ -7,30 +7,65 @@ SiegeGameRules.kMapName = "siege_gamerules"
 
 local networkVars =
 {
+    -- Store the configured timer values
+    frontDoorTime = "float",
+    siegeDoorTime = "float",
+    sideDoorTime = "float",
+
+    -- Store the current state
+    timeGameStarted = "time",
+    frontDoorOpened = "boolean",
+    siegeDoorOpened = "boolean",
+    sideDoorOpened = "boolean"
 }
 
 -- Initialize game rules
 function SiegeGameRules:OnCreate()
      NS2Gamerules.OnCreate(self)
+     -- Initialize default values
+    self.frontDoorTime = 300  -- 5 minutes default
+    self.siegeDoorTime = 900  -- 15 minutes default
+    self.sideDoorTime = 420   -- 7 minutes default
+end
+
+function SiegeGameRules:OnInitialized()
+    NS2Gamerules.OnInitialized(self)
+
+    -- Initialize gameinfo if we're the server
+    if Server then
+        self:SetTimer() -- Set initial timer values
+    end
 end
 
 
 
+-- Called when game state changes or round resets
+function SiegeGameRules:SetTimer()
+    if not Server then return end
 
--- -- Called when map loads
--- function SiegeGameRules:OnMapPostLoad()
---     NS2Gamerules.OnMapPostLoad(self)
---
---     -- Load map-specific settings
---     local mapName = Shared.GetMapName()
---     if kSiegeMapSettings[mapName] then
---         self.frontDoorTime = kSiegeMapSettings[mapName].frontDoorTime or self.frontDoorTime
---         self.siegeDoorTime = kSiegeMapSettings[mapName].siegeDoorTime or self.siegeDoorTime
---     end
---
---     Print(string.format("Map loaded: Front door time = %d, Siege door time = %d",
---         self.frontDoorTime, self.siegeDoorTime))
--- end
+    -- Get GameInfo instance
+    local gameInfo = GetGameInfoEntity()
+    if not gameInfo then return end
+
+    -- Set timer values in GameInfo
+    gameInfo:SetFrontTime(math.floor(self.frontDoorTime))
+    gameInfo:SetSiegeTime(math.floor(self.siegeDoorTime))
+    gameInfo:SetSideTime(math.floor(self.sideDoorTime))
+
+end
+
+function SiegeGameRules:GetFrontDoorTime()
+    return self.frontDoorTime
+end
+
+function SiegeGameRules:GetSiegeDoorTime()
+    return self.siegeDoorTime
+end
+
+function SiegeGameRules:GetSideDoorTime()
+    return self.sideDoorTime
+end
+
 
 -- Override game start check to handle siege-specific conditions
 function SiegeGameRules:CheckGameStart()
@@ -42,7 +77,8 @@ function SiegeGameRules:CheckGameStart()
         self.timeElapsed = 0
         self.frontDoorOpened = false
         self.siegeDoorOpened = false
-        -- Initial update to clients
+        self.sideDoorOpened = false
+        self:SetTimer()
     end
 end
 
@@ -61,16 +97,24 @@ if Server then
 
     function SiegeGameRules:ResetGame()
         NS2Gamerules.ResetGame(self)
-       for _, door in ientitylist(Shared.GetEntitiesWithClassname("SiegeDoor")) do
+       -- Reset all doors
+        for _, door in ientitylist(Shared.GetEntitiesWithClassname("SiegeDoor")) do
             door:OnReset()
             Print("Resetting Door")
-       end
-       for _, timer in ientitylist(Shared.GetEntitiesWithClassname("Timer")) do
+        end
+
+        -- Reset timer
+        for _, timer in ientitylist(Shared.GetEntitiesWithClassname("Timer")) do
             timer:OnReset()
             Print("Resetting Timer")
-       end
-   end
+        end
 
+        -- Reset door states
+        self.frontDoorOpened = false
+        self.siegeDoorOpened = false
+        self.sideDoorOpened = false
+        self:SetTimer()
+    end
 
 end
 

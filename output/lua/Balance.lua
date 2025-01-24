@@ -10,16 +10,6 @@ Script.Load("lua/BalanceHealth.lua")
 Script.Load("lua/BalanceMisc.lua")
 
 
-
-
--- Siege
-
-kFrontTime = 10 --debug
-kSiegeTime = 20 --debug
-kSideTime = 15
-
-
-
 -- Siege
 
 kTransformResourcesTime = 15
