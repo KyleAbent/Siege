@@ -11,7 +11,7 @@ Script.Load("lua/Weapons/Marine/ExoWeaponSlotMixin.lua")
 Script.Load("lua/TechMixin.lua")
 Script.Load("lua/TeamMixin.lua")
 Script.Load("lua/PointGiverMixin.lua")
-Script.Load("lua/AchievementGiverMixin.lua")
+--Script.Load("lua/AchievementGiverMixin.lua")
 Script.Load("lua/EffectsMixin.lua")
 Script.Load("lua/Weapons/ClientWeaponEffectsMixin.lua")
 
@@ -55,7 +55,7 @@ function Railgun:OnCreate()
     InitMixin(self, BulletsMixin)
     InitMixin(self, ExoWeaponSlotMixin)
     InitMixin(self, PointGiverMixin)
-    InitMixin(self, AchievementGiverMixin)
+    --InitMixin(self, AchievementGiverMixin)
     InitMixin(self, EffectsMixin)
     
     self.timeChargeStarted = 0

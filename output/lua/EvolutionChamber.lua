@@ -39,19 +39,19 @@ function EvolutionChamber:SetIncludeRelevancyMask(includeMask)
 end
 
 EvolutionChamber.kUpgradeButtons ={                            
-    [kTechId.SkulkMenu] = { kTechId.Leap, kTechId.Xenocide, kTechId.None, kTechId.None,
+    [kTechId.SkulkMenu] = { kTechId.None, kTechId.None, kTechId.None, kTechId.None,
                                 kTechId.None, kTechId.None, kTechId.None, kTechId.None },
                              
-    [kTechId.GorgeMenu] = { kTechId.BileBomb, kTechId.WebTech, kTechId.None, kTechId.None,
+    [kTechId.GorgeMenu] = { kTechId.None, kTechId.None, kTechId.None, kTechId.None,
                                  kTechId.None, kTechId.None, kTechId.None, kTechId.None },
                                  
-    [kTechId.LerkMenu] = { kTechId.Umbra, kTechId.Spores, kTechId.None, kTechId.None,
+    [kTechId.LerkMenu] = { kTechId.None, kTechId.None, kTechId.None, kTechId.None,
                                  kTechId.None, kTechId.None, kTechId.None, kTechId.None },
                                  
-    [kTechId.FadeMenu] = { kTechId.MetabolizeEnergy, kTechId.MetabolizeHealth, kTechId.Stab, kTechId.None,
+    [kTechId.FadeMenu] = { kTechId.None, kTechId.MetabolizeHealth, kTechId.None, kTechId.None,
                            kTechId.None, kTechId.None, kTechId.None, kTechId.None },
 
-    [kTechId.OnosMenu] = { kTechId.BoneShield, kTechId.Stomp, kTechId.None,
+    [kTechId.OnosMenu] = { kTechId.None, kTechId.None, kTechId.None,
                            kTechId.None, kTechId.None, kTechId.None, kTechId.None }
 }
 

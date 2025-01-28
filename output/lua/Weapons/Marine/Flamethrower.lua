@@ -11,7 +11,7 @@ Script.Load("lua/Weapons/Marine/Flame.lua")
 Script.Load("lua/PickupableWeaponMixin.lua")
 Script.Load("lua/LiveMixin.lua")
 Script.Load("lua/PointGiverMixin.lua")
-Script.Load("lua/AchievementGiverMixin.lua")
+--Script.Load("lua/AchievementGiverMixin.lua")
 Script.Load("lua/FlamethrowerVariantMixin.lua")
 Script.Load("lua/FilteredCinematicMixin.lua")
 
@@ -73,7 +73,7 @@ function Flamethrower:OnCreate()
     InitMixin(self, PickupableWeaponMixin)
     InitMixin(self, LiveMixin)
     InitMixin(self, PointGiverMixin)
-    InitMixin(self, AchievementGiverMixin)
+    --InitMixin(self, AchievementGiverMixin)
     InitMixin(self, FlamethrowerVariantMixin)
 
 end

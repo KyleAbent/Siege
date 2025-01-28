@@ -38,7 +38,7 @@ function LayMines:OnCreate()
     InitMixin(self, PickupableWeaponMixin)
     InitMixin(self, LiveMixin)
     InitMixin(self, PointGiverMixin)
-    InitMixin(self, AchievementGiverMixin)
+    --InitMixin(self, AchievementGiverMixin)
 
     self.minesLeft = kNumMines
     self.droppingMine = false

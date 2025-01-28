@@ -12,7 +12,7 @@ Script.Load("lua/TechMixin.lua")
 Script.Load("lua/Weapons/ClientWeaponEffectsMixin.lua")
 Script.Load("lua/TeamMixin.lua")
 Script.Load("lua/PointGiverMixin.lua")
-Script.Load("lua/AchievementGiverMixin.lua")
+--Script.Load("lua/AchievementGiverMixin.lua")
 Script.Load("lua/FilteredCinematicMixin.lua")
 
 class 'Minigun' (Entity)
@@ -85,7 +85,7 @@ function Minigun:OnCreate()
     InitMixin(self, BulletsMixin)
     InitMixin(self, ExoWeaponSlotMixin)
     InitMixin(self, PointGiverMixin)
-    InitMixin(self, AchievementGiverMixin)
+    --InitMixin(self, AchievementGiverMixin)
 
     self.minigunAttacking = false
     self.shooting = false

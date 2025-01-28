@@ -13,7 +13,7 @@ Script.Load("lua/Weapons/Marine/Grenade.lua")
 Script.Load("lua/EntityChangeMixin.lua")
 Script.Load("lua/LiveMixin.lua")
 Script.Load("lua/PointGiverMixin.lua")
-Script.Load("lua/AchievementGiverMixin.lua")
+--Script.Load("lua/AchievementGiverMixin.lua")
 Script.Load("lua/GrenadeLauncherVariantMixin.lua")
 
 class 'GrenadeLauncher' (ClipWeapon)
@@ -39,7 +39,7 @@ function GrenadeLauncher:OnCreate()
     InitMixin(self, PickupableWeaponMixin)
     InitMixin(self, LiveMixin)
     InitMixin(self, PointGiverMixin)
-    InitMixin(self, AchievementGiverMixin)
+    --InitMixin(self, AchievementGiverMixin)
     InitMixin(self, GrenadeLauncherVariantMixin)
 
     self.emptyPoseParam = 0

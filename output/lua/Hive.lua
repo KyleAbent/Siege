@@ -334,13 +334,13 @@ function Hive:GetTechButtons()
         techButtons[6] = kTechId.CystCamouflage
     end
     
-    if self.bioMassLevel <= 1 then
-        techButtons[2] = kTechId.ResearchBioMassOne
-    elseif self.bioMassLevel <= 2 then
-        techButtons[2] = kTechId.ResearchBioMassTwo
-    elseif self.bioMassLevel <= 3 then
-        techButtons[2] = kTechId.ResearchBioMassThree
-    end
+--     if self.bioMassLevel <= 1 then
+--         techButtons[2] = kTechId.ResearchBioMassOne
+--     elseif self.bioMassLevel <= 2 then
+--         techButtons[2] = kTechId.ResearchBioMassTwo
+--     elseif self.bioMassLevel <= 3 then
+--         techButtons[2] = kTechId.ResearchBioMassThree
+--     end
     
     return techButtons
     

@@ -12,7 +12,7 @@ Script.Load("lua/LiveMixin.lua")
 Script.Load("lua/Weapons/Marine/ClipWeapon.lua")
 Script.Load("lua/PickupableWeaponMixin.lua")
 Script.Load("lua/PointGiverMixin.lua")
-Script.Load("lua/AchievementGiverMixin.lua")
+--Script.Load("lua/AchievementGiverMixin.lua")
 Script.Load("lua/Hitreg.lua")
 Script.Load("lua/ShotgunVariantMixin.lua")
 
@@ -141,7 +141,7 @@ function Shotgun:OnCreate()
     InitMixin(self, PickupableWeaponMixin)
     InitMixin(self, LiveMixin)
     InitMixin(self, PointGiverMixin)
-    InitMixin(self, AchievementGiverMixin)
+    --InitMixin(self, AchievementGiverMixin)
     InitMixin(self, ShotgunVariantMixin)
 
     self.emptyPoseParam = 0
