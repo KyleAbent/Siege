@@ -646,7 +646,7 @@ Event.Hook("Console_alienvision", ToggleAlienVision)
 function Alien:UpdateClientEffects(deltaTime, isLocal)
 
     Player.UpdateClientEffects(self, deltaTime, isLocal)
-
+    self:UpdateGhostModel()
     -- If we are dead, close the evolve menu.
     if isLocal and not self:GetIsAlive() and self:GetBuyMenuIsDisplaying() then
         self:CloseMenu()
@@ -703,6 +703,47 @@ function Alien:UpdateClientEffects(deltaTime, isLocal)
 
     end
 
+end
+
+
+--local orig_Alien_UpdateGhostModel = Alien.UpdateGhostModel
+function Alien:UpdateGhostModel()
+--orig_Alien_UpdateGhostModel(self)
+ self.currentTechId = nil
+
+    self.ghostStructureCoords = nil
+    self.ghostStructureValid = false
+    self.showGhostModel = false
+
+    local weapon = self:GetActiveWeapon()
+    if weapon then
+       if weapon:isa("LayStructures") then
+        self.currentTechId = weapon:GetDropStructureId()
+        self.ghostStructureCoords = weapon:GetGhostModelCoords()
+        self.ghostStructureValid = weapon:GetIsPlacementValid()
+        self.showGhostModel = weapon:GetShowGhostModel()
+         end
+    end
+end --function
+
+function Alien:GetShowGhostModel()
+    return self.showGhostModel
+end
+
+function Alien:GetGhostModelTechId()
+        return self.currentTechId
+end
+
+function Alien:GetGhostModelCoords()
+    return self.ghostStructureCoords
+end
+
+function Alien:GetIsPlacementValid()
+    return self.ghostStructureValid
+end
+
+function Alien:AddGhostGuide(origin, radius)
+return
 end
 
 function Alien:GetFirstPersonDeathEffect()

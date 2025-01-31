@@ -1132,4 +1132,26 @@ function Marine:GetBodyYawTurnThreshold()
     return -Math.Radians(85), Math.Radians(25)
 end
 
+
+function Marine:GetHasLayStructure()
+        local weapon = self:GetWeaponInHUDSlot(5)
+        local builder = false
+    if (weapon) then
+            builder = true
+    end
+
+    return builder
+end
+
+function Marine:GiveLayStructure(techid, mapname)
+  --  if not self:GetHasLayStructure() then
+           local laystructure = self:GiveItem(LayStructures.kMapName)
+           self:SetActiveWeapon(LayStructures.kMapName)
+           laystructure:SetTechId(techid)
+           laystructure:SetMapName(mapname)
+  -- else
+   --  self:TellMarine(self)
+  -- end
+end
+
 Shared.LinkClassToMap("Marine", Marine.kMapName, networkVars, true)

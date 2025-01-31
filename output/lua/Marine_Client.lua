@@ -681,13 +681,18 @@ function Marine:UpdateGhostModel()
     
     local weapon = self:GetActiveWeapon()
 
-    if weapon and weapon:isa("LayMines") then
-    
+    if weapon then
+       if weapon:isa("LayStructures") then
+        self.currentTechId = weapon:GetDropStructureId()
+        self.ghostStructureCoords = weapon:GetGhostModelCoords()
+        self.ghostStructureValid = weapon:GetIsPlacementValid()
+        self.showGhostModel = weapon:GetShowGhostModel()
+        elseif weapon:isa("LayMines") then
         self.currentTechId = kTechId.Mine
         self.ghostStructureCoords = weapon:GetGhostModelCoords()
         self.ghostStructureValid = weapon:GetIsPlacementValid()
         self.showGhostModel = weapon:GetShowGhostModel()
-    
+         end
     end
 
 end

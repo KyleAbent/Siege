@@ -173,6 +173,26 @@
 
     </class>
     
+
+-<class name="nav_point">
+
+
+-<pathing>
+
+<include/>
+
+<file>models/misc/tech_point/tech_point.model</file>
+
+</pathing>
+
+
+    	<model>
+            <file>models/system/editor/gamerules.model</file>
+       </model>
+
+</class>
+
+
     <class name="ambient_sound_player">
     
         <parent>signal_listener</parent>

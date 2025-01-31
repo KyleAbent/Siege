@@ -280,23 +280,15 @@ end
 -- Called as the map is being loaded to create the entities.
 function OnMapLoadEntity(mapName, groupName, values)
 
-    --check all entities in a map for possible removal
-    if ThunderdomeEntityRemove( mapName, values ) then
-        Log("INFO: skipping loading of '%s' in Thunderdome-Mode", mapName)
-        return
-    end
-
-    --Parse the map entity, checking if it needs to be changed out
-    mapName, values = ThunderdomeEntitySwap( mapName, values )
-
     local priority = GetMapEntityLoadPriority(mapName)
     if Server.mapPostLoadEntities[priority] == nil then
         Server.mapPostLoadEntities[priority] = { }
     end
     
-    if mapName == "tech_point" then
+    if mapName == "tech_point"  or mapName == "nav_point" then -- Siege
         Pathing.AddFillPoint(values.origin) 
     end
+
 
     table.insert(Server.mapPostLoadEntities[priority], { MapName = mapName, GroupName = groupName, Values = values })
 

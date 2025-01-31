@@ -73,6 +73,7 @@ kBmacMaterialViewIndices = --Zero-based indices (shared view model for all bmacs
     ["Rifle"] = 2,
     ["Builder"] = 2,
     ["Welder"] = 2,
+    ["LayStructures"] = 2,
     ["Shotgun"] = 4,
     ["Flamethrower"] = 2,
     ["GrenadeLauncher"] = 3,

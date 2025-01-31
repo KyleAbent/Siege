@@ -734,4 +734,26 @@ function Alien:ModifyHeal(healTable)
 
 end
 
+
+function Alien:GiveLayStructure(techid, mapname)
+  --  if not self:GetHasLayStructure() then
+           local laystructure = self:GiveItem(LayStructures.kMapName)
+           self:SetActiveWeapon(LayStructures.kMapName)
+           laystructure:SetTechId(techid)
+           laystructure:SetMapName(mapname)
+  -- else
+   --  self:TellMarine(self)
+  -- end
+end
+function Alien:GetHasLayStructure()
+        local weapon = self:GetWeaponInHUDSlot(5)
+        local builder = false
+    if (weapon) then
+            builder = true
+    end
+
+    return builder
+end
+
+
 Shared.LinkClassToMap("Alien", Alien.kMapName, networkVars, true)
