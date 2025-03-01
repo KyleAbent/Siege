@@ -1125,10 +1125,11 @@ function GUIAlienHUD:UpdateAbilities(deltaTime)
 
     local player = Client.GetLocalPlayer()
     local gorgeBuiltTextVisible = false
-    if player and player:isa("Gorge") and GUIGorgeBuildMenu then
+    if player and player:isa("Gorge") and (GUIGorgeBuildMenu or GUIGorgeBuildMenuExtra) then
 
         local activeWeapon = player:GetActiveWeapon()
-        if activeWeapon and activeWeapon:isa("DropStructureAbility") then
+        if activeWeapon and (activeWeapon:isa("DropStructureAbility") or activeWeapon:isa("DropStructureAbilityExtra")) then
+
 
             local structure = activeWeapon:GetActiveStructure()
             local structureId = structure and structure:GetDropStructureId() or -1

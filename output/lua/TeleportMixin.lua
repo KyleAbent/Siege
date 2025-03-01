@@ -33,6 +33,21 @@ TeleportMixin.networkVars = {
     
 }
 
+function TeleportMixin:TriggerSelfTeleport(destination)
+    -- Similar to Shift's TriggerEcho but for self-teleportation
+    local validPos = GetIsBuildLegal(self:GetTechId(), destination, 0, kStructureSnapRadius, self:GetOwner(), self)
+
+    if validPos then
+        -- Use existing teleport functionality
+        local teleportDelay = 3  -- Appropriate delay to give time for counterplay
+        self:TriggerTeleport(teleportDelay, Entity.invalidId, destination, 0)
+        self:TriggerEffects("structure_teleport_start")
+        return true
+    end
+
+    return false
+end
+
 function TeleportMixin:OnIsTeleportingChanged()
     
     -- Update rate isn't sync'd, so when we start updating faster during an echo, also increase the
@@ -115,6 +130,13 @@ function TeleportMixin:GetCanTeleport()
     local canTeleport = true
     if self.GetCanTeleportOverride then
         canTeleport = self:GetCanTeleportOverride()
+    end
+
+    -- Get GameInfo, require front door to be open
+    local gameInfo = GetGameInfoEntity()
+    if gameInfo then
+        -- Only allow teleporting after the setup phase (front time) has concluded
+        canTeleport = canTeleport and gameInfo:GetSetupConcluded()
     end
     
     return canTeleport and not self.isTeleporting
@@ -213,7 +235,7 @@ local function PerformTeleport(self)
 
     local destinationEntity = Shared.GetEntity(self.destinationEntityId)
     
-    if destinationEntity then
+--     if destinationEntity then
 
         local destinationCoords
         local attachTo = LookupTechData(self:GetTechId(), kStructureAttachClass, nil)
@@ -245,7 +267,7 @@ local function PerformTeleport(self)
             
             self:TriggerEffects("teleport_end", { classname = self:GetClassName() })
             
-            if self.OnTeleportEnd then
+            if self.OnTeleportEnd and destinationEntity then
                 self:OnTeleportEnd(destinationEntity)
             end
             
@@ -262,7 +284,7 @@ local function PerformTeleport(self)
         
         end
     
-    end
+--     end
     
     self.destinationEntityId = Entity.invalidId
     self.isTeleporting = false

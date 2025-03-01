@@ -12,6 +12,53 @@ Script.Load("lua/BalanceMisc.lua")
 
 -- Siege
 
+kArcBuildTime = 8
+
+kPrimalScreamEnergyCost = 20
+kPrimalScreamROF = 1.25
+kPrimalScreamROFIncrease = 1.3
+
+kPrimalScreamEnergyCost = 25
+kPrimalScreamRange = 10
+kPrimalScreamDamageModifier = 1.3
+kPrimalScreamDuration = 4
+kPrimalScreamEnergyGain = 60
+kPrimalScreamROF = 3
+
+kObsAdvBeaconPowerOff = 16 --12 w/ lvl 25
+kEggBeaconBuildTime = 8
+kStructureBeaconBuildTime = 8
+
+kBatteryPowerRange = 4
+
+kRedemptionCost = 2
+kRebirthCost = 2
+kRedemptionCooldown = 45
+kRedemptionCooldown = 45
+kRedemptionEHPThresholdMin = 15
+kRedemptionEHPThresholdMax = 30
+
+kThickenedSkinCost = 2
+kHungerCost = 2
+
+kMaxEntitiesInRadius = 99
+kMaxEntityRadius = 99
+
+kSelfTeleportDelay = 10
+
+kAcidRocketDamage = 25
+kAcidRocketDamageType = kDamageType.Structural
+kAcidRocketFireDelay = 0.5
+kAcidRocketEnergyCost = 10
+kAcidRocketRadius = 6
+
+kMaxGorgeWhips = 3
+kMaxGorgeShades = 3
+kMaxGorgeShifts = 3
+kMaxGorgeCrags = 3
+
+---------------------
+
 kTransformResourcesTime = 15
 kTransformResourcesCost = 15
 kTransformResourcesRate = 1
@@ -546,7 +593,7 @@ kMarineRespawnTime = 9
 
 kAlienSpawnTime = 10
 kEggGenerationRate = 13
-kAlienEggsPerHive = 6
+kAlienEggsPerHive = 18
 
 -- delay of a single upgrade level after alien respawn
 kUpgradeLevelDelayAtAlienRepawn = 4

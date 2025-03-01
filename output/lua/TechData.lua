@@ -165,6 +165,51 @@ local kCachedMapNameTechIds
 local kCachedTechData
 
 
+function GetCheckEggBeacon(techId, origin, normal, commander)
+    -- Check if front door is open (setup phase has concluded)
+    local gameInfo = GetGameInfoEntity()
+    if gameInfo and not gameInfo:GetSetupConcluded() then
+        return false
+    end
+
+    -- Check if trying to build in a Siege area
+    local location = GetLocationForPoint(origin)
+    if location and (string.find(location:GetName(), "siege") or string.find(location:GetName(), "Siege")) then
+        return false
+    end
+
+    -- Check if we already have an EggBeacon
+    local num = 0
+    for index, beacon in ientitylist(Shared.GetEntitiesWithClassname("EggBeacon")) do
+        num = num + 1
+    end
+
+    return num < 1
+end
+
+function GetCheckStructureBeacon(techId, origin, normal, commander)
+    -- Check if front door is open (setup phase has concluded)
+    local gameInfo = GetGameInfoEntity()
+    if gameInfo and not gameInfo:GetSetupConcluded() then
+        return false
+    end
+
+    -- Check if trying to build in a Siege area
+    local location = GetLocationForPoint(origin)
+    if location and (string.find(location:GetName(), "siege") or string.find(location:GetName(), "Siege")) then
+        return false
+    end
+
+    -- Check if we already have a StructureBeacon
+    local num = 0
+    for index, beacon in ientitylist(Shared.GetEntitiesWithClassname("StructureBeacon")) do
+        num = num + 1
+    end
+
+    return num < 1
+end
+
+
 function GetCheckCommandStationLimit(techId, origin, normal, commander)
     local num = 0
        for _, cc in ipairs(GetEntitiesWithinRange("CommandStation", origin, 9999)) do
@@ -237,6 +282,43 @@ function GetCheckArmsLimit(techId, origin, normal, commander)
     return num < 6
 end
 
+function GetCheckLightLimit(techId, origin, normal, commander)
+
+    -- Prevent the case where a Sentry in one room is being placed next to a
+    -- SentryBattery in another room.
+    local battery = GetSentryBatteryInRoom(origin)
+    if battery then
+
+        if (battery:GetOrigin() - origin):GetLength() > kBatteryPowerRange then
+            return false
+        end
+
+    else
+        return false
+    end
+
+    local location = GetLocationForPoint(origin)
+    local locationName = location and location:GetName() or nil
+    local numInRoom = 0
+    local validRoom = false
+
+    if locationName then
+
+        validRoom = true
+
+        for index, sentry in ientitylist(Shared.GetEntitiesWithClassname("BackupLight")) do
+
+            if sentry:GetLocationName() == locationName then
+                numInRoom = numInRoom + 1
+            end
+
+        end
+
+    end
+
+    return validRoom and numInRoom < 1
+
+end
 
 --------
 
@@ -990,6 +1072,31 @@ function BuildTechData()
         },
 
         {
+            [kTechDataId] = kTechId.BackupLight,
+            [kTechDataHint] = "Powered by thought!",
+            [kTechDataGhostModelClass] = "MarineGhostModel",
+            [kTechDataRequiresPower] = true,
+            [kTechDataMapName] = BackupLight.kMapName,
+            [kTechDataDisplayName] = "Backup Light",
+            [kTechDataSpecifyOrientation] = true,
+            [kTechDataCostKey] = 5,
+--             [kTechDataBuildMethodFailedMessage] = "1 per room",
+--             [kStructureBuildNearClass] = "SentryBattery",
+--             [kStructureAttachId] = kTechId.SentryBattery,
+--             [kTechDataBuildRequiresMethod] = GetCheckLightLimit,
+            [kStructureAttachRange] = 5,
+            [kTechDataModel] = BackupLight.kModelName,
+            [kTechDataBuildTime] = 6,
+            [kTechDataMaxHealth] = 1000,  --this could go in balancehealth etc
+            [kTechDataMaxArmor] = 100,
+            [kTechDataPointValue] = 2,
+            [kTechDataHotkey] = Move.O,
+            [kTechDataNotOnInfestation] = false,
+            [kTechDataTooltipInfo] = "This bad boy right here has the potential to blind anyone standing in its way.. or just.. you know.. help brighten the mood wherever it's placed.",
+            [kTechDataObstacleRadius] = 0.25
+        },
+
+        {
             [kTechDataId] = kTechId.ArmsLab,
             [kTechDataHint] = "ARMSLAB_HINT",
             [kTechDataBuildRequiresMethod] = GetCheckArmsLimit,
@@ -1033,10 +1140,10 @@ function BuildTechData()
             [kTechDataNotOnInfestation] = kPreventMarineStructuresOnInfestation,
             [kTechDataEngagementDistance] = kSentryEngagementDistance,
             [kTechDataTooltipInfo] = "SENTRY_TOOLTIP",
-            [kStructureBuildNearClass] = "SentryBattery",
-            [kStructureAttachRange] = SentryBattery.kRange,
+--             [kStructureBuildNearClass] = "SentryBattery",
+--             [kStructureAttachRange] = SentryBattery.kRange,
             [kTechDataBuildRequiresMethod] = GetCheckSentryLimit,
-            [kTechDataGhostGuidesMethod] = GetBatteryInRange,
+
             [kTechDataObstacleRadius] = 0.7,
         },
 
@@ -1045,21 +1152,21 @@ function BuildTechData()
             [kTechDataSupply] = kSentryBatterySupply,
             [kTechDataBuildRequiresMethod] = GetRoomHasNoSentryBattery,
             [kTechDataBuildMethodFailedMessage] = "COMMANDERERROR_ONLY_ONE_BATTERY_PER_ROOM",
-            [kTechDataHint] = "SENTRY_BATTERY_HINT",
+            [kTechDataHint] = "Powers Nearby Structures when Power Point is DOWN!",
             [kTechDataGhostModelClass] = "MarineGhostModel",
-            [kTechDataMapName] = SentryBattery.kMapName,
-            [kTechDataDisplayName] = "SENTRY_BATTERY",
+            [kTechDataMapName] = BackupBattery.kMapName,
+            [kTechDataDisplayName] = "Backup Battery",
             [kTechDataCostKey] = kSentryBatteryCost,
             [kTechDataPointValue] = kSentryBatteryPointValue,
-            [kTechDataModel] = SentryBattery.kModelName,
+            [kTechDataModel] = BackupBattery.kModelName,
             [kTechDataEngagementDistance] = 2,
             [kTechDataBuildTime] = kSentryBatteryBuildTime,
             [kTechDataMaxHealth] = kSentryBatteryHealth,
             [kTechDataMaxArmor] = kSentryBatteryArmor,
-            [kTechDataTooltipInfo] = "SENTRY_BATTERY_TOOLTIP",
+            [kTechDataTooltipInfo] = "Powers Nearby Structures when Power Point is DOWN!!",
             [kTechDataHotkey] = Move.S,
             [kTechDataNotOnInfestation] = kPreventMarineStructuresOnInfestation,
-            [kVisualRange] = SentryBattery.kRange,
+            [kVisualRange] = BackupBattery.kRange,
             [kTechDataObstacleRadius] = 0.55,
         },
 
@@ -1144,6 +1251,16 @@ function BuildTechData()
         },
 
         {
+            [kTechDataId] = kTechId.AdvancedBeacon,
+            [kTechDataBuildTime] = 0.1,
+            [kTechDataCooldown] = kObsAdvBeaconPowerOff,
+            [kTechDataDisplayName] = "Advanced Beacon",
+            [kTechDataHotkey] = Move.B,
+            [kTechDataCostKey] = kAdvancedBeaconCost,
+            [kTechDataTooltipInfo] = "Revives Dead Players as well. Powers off Observatory for a short duration after beaconing."
+        },
+
+        {
             [kTechDataId] = kTechId.RoboticsFactory,
             [kTechDataSupply] = kRoboticsFactorySupply,
             [kTechDataHint] = "ROBOTICS_FACTORY_HINT",
@@ -1205,7 +1322,9 @@ function BuildTechData()
             [kTechDataSupply] = kARCSupply,
             [kTechDataHint] = "ARC_HINT",
             [kTechDataDisplayName] = "ARC",
-            [kTechDataTooltipInfo] = Shared.GetThunderdomeEnabled() and "ARC_THUNDERDOME_TOOLTIP" or "ARC_TOOLTIP",
+            [kTechDataTooltipInfo] = "ARC_TOOLTIP",
+            [kTechDataGhostModelClass] = "MarineGhostModel",
+            [kTechDataBuildTime] = kArcBuildTime,
             [kTechDataMapName] = ARC.kMapName,
             [kTechDataCostKey] = kARCCost,
             [kTechDataDamageType] = kARCDamageType,
@@ -2115,6 +2234,29 @@ function BuildTechData()
             [kTechDataResearchName] = "UMBRA",
         },
 
+
+        {
+        [kTechDataId] = kTechId.AcidRocket,
+        [kTechDataCategory] = kTechId.Fade,
+        [kTechDataMapName] = AcidRocket.kMapName,
+        [kTechDataCostKey] = kStabResearchCost,
+        [kTechDataResearchTimeKey] = kStabResearchTime,
+        [kTechDataDamageType] = kDamageType.Corrode,
+        [kTechDataDisplayName] = "AcidRocket",
+        [kTechDataTooltipInfo] = "Ranged Projectile dealing damage only to armor and structures"
+        },
+
+
+        {
+            [kTechDataId] = kTechId.PrimalScream,
+            [kTechDataCategory] = kTechId.Lerk,
+            [kTechDataDisplayName] = "Primal Scream",
+            [kTechDataMapName] =  Primal.kMapName,
+            --[kTechDataCostKey] = kPrimalScreamCostKey,
+            -- [kTechDataResearchTimeKey] = kPrimalScreamTimeKey,
+            [kTechDataTooltipInfo] = "+Energy to teammates, enzyme cloud"
+        },
+
         {
             [kTechDataId] = kTechId.BileBomb,
             [kTechDataCategory] = kTechId.Gorge,
@@ -2675,6 +2817,40 @@ function BuildTechData()
             [kTechDataTooltipInfo] = "WHIP_SLAP_TOOLTIP",
         },
 
+
+        { [kTechDataId] = kTechId.EggBeacon,
+            [kTechDataCooldown] = kEggBeaconCoolDown,
+            [kTechDataBuildMethodFailedMessage] = "Cannot build - either in Siege area, setup phase ongoing, or limit reached",
+            [kTechDataGhostModelClass] = "AlienGhostModel",
+            [kTechDataBuildRequiresMethod] = GetCheckEggBeacon,
+            [kTechDataMapName] = EggBeacon.kMapName,
+            [kTechDataDisplayName] = "Egg Beacon",
+            [kTechDataCostKey] = kEggBeaconCost,
+            [kTechDataRequiresInfestation] = true,
+            [kTechDataHotkey] = Move.C,
+            [kTechDataBuildTime] = kEggBeaconBuildTime,
+            [kTechDataModel] = EggBeacon.kModelName,
+            [kVisualRange] = 8,
+            [kTechDataMaxHealth] = kEggBeaconHealth, [kTechDataMaxArmor] = kEggBeaconArmor
+        },
+
+
+        { [kTechDataId] = kTechId.StructureBeacon,
+            [kTechDataCooldown] = kStructureBeaconCoolDown,
+            [kTechDataTooltipInfo] = "Structures move in bulk to this location",
+            [kTechDataBuildRequiresMethod] = GetCheckStructureBeacon,
+            [kTechDataBuildMethodFailedMessage] = "Cannot build - either in Siege area, setup phase ongoing, or limit reached",
+            [kTechDataGhostModelClass] = "AlienGhostModel",
+            [kTechDataMapName] = StructureBeacon.kMapName,
+            [kTechDataDisplayName] = "Structure Beacon",  [kTechDataCostKey] = kStructureBeaconCost,
+            [kTechDataRequiresInfestation] = true, [kTechDataHotkey] = Move.C,
+            [kTechDataBuildTime] = kStructureBeaconBuildTime,
+            [kTechDataModel] = StructureBeacon.kModelName,
+            [kVisualRange] = 8,
+            [kTechDataMaxHealth] = kStructureBeaconHealth, [kTechDataMaxArmor] = kStructureBeaconArmor
+        },
+
+
         -- Upgrade structures and research
         {
             [kTechDataId] = kTechId.Crag,
@@ -2698,6 +2874,8 @@ function BuildTechData()
             [kTechDataTooltipInfo] = "CRAG_TOOLTIP",
             [kTechDataGrows] = true,
             [kTechDataObstacleRadius] = 1.15,
+            [kTechDataMaxAmount] = kMaxGorgeCrags,
+            [kTechDataAllowConsumeDrop] = true,
         },
 
         {
@@ -2723,6 +2901,8 @@ function BuildTechData()
             [kTechDataTooltipInfo] = "WHIP_TOOLTIP",
             [kTechDataGrows] = true,
             [kTechDataObstacleRadius] = 0.85,
+            [kTechDataMaxAmount] = kMaxGorgeWhips,
+            [kTechDataAllowConsumeDrop] = true,
         },
 
         {
@@ -2759,6 +2939,8 @@ function BuildTechData()
             [kTechDataTooltipInfo] = "SHIFT_TOOLTIP",
             [kTechDataGrows] = true,
             [kTechDataObstacleRadius] = 1.3,
+            [kTechDataMaxAmount] = kMaxGorgeShifts,
+            [kTechDataAllowConsumeDrop] = true,
         },
 
         {
@@ -3064,6 +3246,8 @@ function BuildTechData()
             [kTechDataTooltipInfo] = "SHADE_TOOLTIP",
             [kTechDataGrows] = true,
             [kTechDataObstacleRadius] = 1.25,
+            [kTechDataMaxAmount] = kMaxGorgeShades,
+            [kTechDataAllowConsumeDrop] = true,
         },
 
         {
@@ -3461,11 +3645,11 @@ function BuildTechData()
         {
             [kTechDataId] = kTechId.Cyst,
             [kTechDataSpawnBlock] = true,
-            [kTechDataBuildMethodFailedMessage] = "COMMANDERERROR_NO_CYST_PARENT_FOUND",
-            [kTechDataOverrideCoordsMethod] = AlignCyst,
+--             [kTechDataBuildMethodFailedMessage] = "COMMANDERERROR_NO_CYST_PARENT_FOUND",
+--             [kTechDataOverrideCoordsMethod] = AlignCyst,
             [kTechDataHint] = "CYST_HINT",
             [kTechDataCooldown] = kCystCooldown,
-            [kTechDataGhostModelClass] = "CystGhostModel",
+            [kTechDataGhostModelClass] = "AlienGhostModel",
             [kTechDataMapName] = Cyst.kMapName,
             [kTechDataDisplayName] = "CYST",
             [kTechDataTooltipInfo] = "CYST_TOOLTIP",
@@ -3478,7 +3662,7 @@ function BuildTechData()
             [kTechDataRequiresInfestation] = false,
             [kTechDataPointValue] = kCystPointValue,
             [kTechDataGrows] = false,
-            [kTechDataBuildRequiresMethod] = GetCystParentAvailable,
+--             [kTechDataBuildRequiresMethod] = GetCystParentAvailable,
             [kTechDataAllowStacking] = true,
         },
 
@@ -3610,6 +3794,16 @@ function BuildTechData()
             [kTechDataId] = kTechId.ShiftEcho,
             [kTechDataDisplayName] = "ECHO",
             [kTechDataTooltipInfo] = "SHIFT_ECHO_TOOLTIP",
+        },
+
+        -- In the BuildTechData function
+        {
+            [kTechDataId] = kTechId.SelfTeleport,
+            [kTechDataCostKey] = 0,  -- No resource cost, or set appropriately
+            [kTechDataDisplayName] = "Self Teleport",
+            [kTechDataTooltipInfo] = "Teleport to another location on infestation",
+            [kTechDataRequiresInfestation] = true,  -- Only works on infestation
+            [kTechDataCooldown] = 20,  -- Add a reasonable cooldown to prevent spam
         },
 
         {
@@ -4048,6 +4242,79 @@ function BuildTechData()
             [kTechDataDisplayName] = "EXPANDING_HERE",
             [kTechDataTooltipInfo] = "PHEROMONE_EXPANDING_TOOLTIP",
         },
+
+
+        {
+            [kTechDataId] = kTechId.Rebirth,
+            [kTechDataCategory] = kTechId.CragHiveTwo,
+            [kTechDataDisplayName] = "Rebirth",
+            [kTechDataSponitorCode] = "A",
+            [kTechDataCostKey] = kRebirthCost,
+            [kTechDataTooltipInfo] = "Replaces death with gestation if cooldown is reached",
+        },
+
+        // Lifeform purchases
+        {
+        [kTechDataId] = kTechId.Redemption,
+        [kTechDataCategory] = kTechId.CragHiveTwo,
+        [kTechDataDisplayName] = "Redemption",
+        [kTechDataSponitorCode] = "B",
+        [kTechDataCostKey] = kRedemptionCost,
+        [kTechDataTooltipInfo] = "a 3 second timer checks if your health is a random value less than or equal to 15-30% of your max hp. If so, then randomly tp to a egg spawn 1-4 seconds after.",
+        },
+
+
+        {
+            [kTechDataId] = kTechId.Rebirth,
+            [kTechDataCategory] = kTechId.CragHiveTwo,
+            [kTechDataDisplayName] = "Rebirth",
+            [kTechDataSponitorCode] = "A",
+            [kTechDataCostKey] = kRebirthCost,
+            [kTechDataTooltipInfo] = "Replaces death with gestation if cooldown is reached",
+        },
+
+        // Lifeform purchases
+        {
+            [kTechDataId] = kTechId.Redemption,
+            [kTechDataCategory] = kTechId.CragHiveTwo,
+            [kTechDataDisplayName] = "Redemption",
+            [kTechDataSponitorCode] = "B",
+            [kTechDataCostKey] = kRedemptionCost,
+            [kTechDataTooltipInfo] = "a 3 second timer checks if your health is a random value less than or equal to 15-30% of your max hp. If so, then randomly tp to a egg spawn 1-4 seconds after.",
+        },
+
+
+        {
+            [kTechDataId] = kTechId.ThickenedSkin,
+            [kTechDataCategory] = kTechId.ShiftHiveTwo,
+            [kTechDataDisplayName] = "Thickened Skin",
+            [kTechDataSponitorCode] = "A",
+            [kTechDataCostKey] = kThickenedSkinCost,
+            [kTechDataTooltipInfo] = "Another layer of +hp for each biomass level",
+        },
+
+        {
+            [kTechDataId] = kTechId.Hunger,
+            [kTechDataCategory] = kTechId.CragHiveTwo,
+            [kTechDataDisplayName] = "Hunger",
+            [kTechDataSponitorCode] = "B",
+            [kTechDataCostKey] = kHungerCost,
+            [kTechDataTooltipInfo] = "10% health / energy gain, and effects of Enzyme on player kill (if gorge then structures not players) ",
+        },
+
+        {
+            [kTechDataId] = kTechId.LerkBileBomb,
+            [kTechDataCategory] = kTechId.Lerk,
+            [kTechDataMapName] = LerkBileBomb.kMapName,
+            [kTechDataCostKey] = kStabResearchCost,
+            [kTechDataResearchTimeKey] = kStabResearchTime,
+            [kTechDataDamageType] = kDamageType.Corrode,
+            [kTechDataDisplayName] = "LerkBileBomb",
+            [kTechDataTooltipInfo] = "Derp"
+        },
+
+
+
 
         {
             [kTechDataId] = kTechId.NutrientMist,

@@ -1,6 +1,6 @@
 -- ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
 --
--- lua\SentryBattery.lua
+-- lua\BackupBattery.lua
 --
 --    Created by:   Andreas Urwalek (andi@unknownworlds.com)
 --
@@ -31,17 +31,19 @@ Script.Load("lua/WeldableMixin.lua")
 Script.Load("lua/UnitStatusMixin.lua")
 Script.Load("lua/DissolveMixin.lua")
 Script.Load("lua/GhostStructureMixin.lua")
-Script.Load("lua/PowerConsumerMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
 Script.Load("lua/ParasiteMixin.lua")
 Script.Load("lua/SupplyUserMixin.lua")
+Script.Load("lua/PowerSourceMixin.lua")
 
-class 'SentryBattery' (ScriptActor)
-SentryBattery.kMapName = "sentrybattery"
-SentryBattery.kRange = 4.0
 
-SentryBattery.kModelName = PrecacheAsset("models/marine/portable_node/portable_node.model")
+
+class 'BackupBattery' (ScriptActor)
+BackupBattery.kMapName = "backupbattery"
+BackupBattery.kRange = kBatteryPowerRange
+
+BackupBattery.kModelName = PrecacheAsset("models/marine/portable_node/portable_node.model")
 local kAnimationGraph = PrecacheAsset("models/marine/portable_node/portable_node.animation_graph")
 
 local networkVars =
@@ -56,6 +58,7 @@ AddMixinNetworkVars(FlinchMixin, networkVars)
 AddMixinNetworkVars(TeamMixin, networkVars)
 AddMixinNetworkVars(LOSMixin, networkVars)
 AddMixinNetworkVars(CorrodeMixin, networkVars)
+AddMixinNetworkVars(PowerSourceMixin, networkVars)
 AddMixinNetworkVars(ConstructMixin, networkVars)
 AddMixinNetworkVars(ResearchMixin, networkVars)
 AddMixinNetworkVars(RecycleMixin, networkVars)
@@ -66,11 +69,10 @@ AddMixinNetworkVars(StunMixin, networkVars)
 AddMixinNetworkVars(ObstacleMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(GhostStructureMixin, networkVars)
-AddMixinNetworkVars(PowerConsumerMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
 AddMixinNetworkVars(ParasiteMixin, networkVars)
 
-function SentryBattery:OnCreate()
+function BackupBattery:OnCreate()
 
     ScriptActor.OnCreate(self)
     
@@ -86,6 +88,7 @@ function SentryBattery:OnCreate()
     InitMixin(self, EntityChangeMixin)
     InitMixin(self, LOSMixin)
     InitMixin(self, CorrodeMixin)
+    InitMixin(self, PowerSourceMixin)
     InitMixin(self, ConstructMixin)
     InitMixin(self, ResearchMixin)
     InitMixin(self, RecycleMixin)
@@ -93,7 +96,6 @@ function SentryBattery:OnCreate()
     InitMixin(self, ObstacleMixin)
     InitMixin(self, DissolveMixin)
     InitMixin(self, GhostStructureMixin)
-    InitMixin(self, PowerConsumerMixin)
     InitMixin(self, ParasiteMixin)
     
     if Client then
@@ -106,7 +108,11 @@ function SentryBattery:OnCreate()
     
 end
 
-function SentryBattery:OnInitialized()
+function BackupBattery:GetMapBlipType()
+    return kMinimapBlipType.SentryBattery
+end
+
+function BackupBattery:OnInitialized()
 
     ScriptActor.OnInitialized(self)
     
@@ -131,33 +137,47 @@ function SentryBattery:OnInitialized()
         
     end
     
-    self:SetModel(SentryBattery.kModelName, kAnimationGraph)
+    self:SetModel(BackupBattery.kModelName, kAnimationGraph)
 
 end
 
-function SentryBattery:GetReceivesStructuralDamage()
+function BackupBattery:GetReceivesStructuralDamage()
     return true
 end
 
-function SentryBattery:GetDamagedAlertId()
+function BackupBattery:GetDamagedAlertId()
     return kTechId.MarineAlertStructureUnderAttack
 end
 
-function SentryBattery:GetRequiresPower()
+function BackupBattery:GetRequiresPower()
     return false
 end
-function SentryBattery:GetHealthbarOffset()
+function BackupBattery:GetHealthbarOffset()
     return 0.75
-end 
+end
 
-function GetSentryBatteryInRoom(origin)
+
+function BackupBattery:OnConstructionComplete()
+    self:SetPoweringState(true)
+    FindNewPowerConsumers(self)
+end
+
+function BackupBattery:GetCanPower(consumer)
+--     return self:GetLocationId() == consumer:GetLocationId()
+    --Distance between Self and is less than equal to kBatteryPowerRange
+    return (self:GetOrigin() - consumer:GetOrigin()):GetLength() <= BackupBattery.kRange
+end
+
+
+
+function GetBackupBatteryInRoom(origin)
 
     local location = GetLocationForPoint(origin)
     local locationName = location and location:GetName() or nil
     
     if locationName then
     
-        local batteries = Shared.GetEntitiesWithClassname("SentryBattery")
+        local batteries = Shared.GetEntitiesWithClassname("BackupBattery")
         for b = 0, batteries:GetSize() - 1 do
         
             local battery = batteries:GetEntityAtIndex(b)
@@ -173,7 +193,14 @@ function GetSentryBatteryInRoom(origin)
     
 end
 
-function GetRoomHasNoSentryBattery(techId, origin, normal, commander)
+function BackupBattery:GetTechButtons(techId)
+
+    return { kTechId.BackupLight, kTechId.None, kTechId.None, kTechId.None,
+             kTechId.None, kTechId.None, kTechId.None, kTechId.None }
+
+end
+
+function GetRoomHasNoBackupBattery(techId, origin, normal, commander)
 
     local location = GetLocationForPoint(origin)
     local locationName = location and location:GetName() or nil
@@ -183,7 +210,7 @@ function GetRoomHasNoSentryBattery(techId, origin, normal, commander)
     
         validRoom = true
     
-        for index, sentryBattery in ientitylist(Shared.GetEntitiesWithClassname("SentryBattery")) do
+        for index, sentryBattery in ientitylist(Shared.GetEntitiesWithClassname("BackupBattery")) do
             
             if sentryBattery:GetLocationName() == locationName then
                 validRoom = false
@@ -200,11 +227,11 @@ end
 
 if Server then
 
-    function SentryBattery:GetDestroyOnKill()
+    function BackupBattery:GetDestroyOnKill()
         return true
     end
 
-    function SentryBattery:OnKill()
+    function BackupBattery:OnKill()
 
         self:TriggerEffects("death")
 
@@ -212,4 +239,4 @@ if Server then
 
 end
 
-Shared.LinkClassToMap("SentryBattery", SentryBattery.kMapName, networkVars)
+Shared.LinkClassToMap("BackupBattery", BackupBattery.kMapName, networkVars)

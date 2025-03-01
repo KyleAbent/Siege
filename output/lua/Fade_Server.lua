@@ -36,3 +36,7 @@ end
 function Fade:GetTierThreeTechId()
     return kTechId.Stab
 end
+
+function Fade:GetTierFourTechId()
+    return kTechId.AcidRocket
+end

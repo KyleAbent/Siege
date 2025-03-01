@@ -461,16 +461,19 @@ function MarineTeam:InitTechTree()
 
     -- When adding marine upgrades that morph structures, make sure to add to GetRecycleCost() also
     self.techTree:AddBuildNode(kTechId.InfantryPortal,            kTechId.CommandStation,                kTechId.None)
-    self.techTree:AddBuildNode(kTechId.Sentry,                    kTechId.RoboticsFactory,     kTechId.None, true)
+    self.techTree:AddBuildNode(kTechId.Sentry,                    kTechId.None,     kTechId.None, true)
     self.techTree:AddBuildNode(kTechId.Armory,                    kTechId.CommandStation,      kTechId.None)
     self.techTree:AddBuildNode(kTechId.ArmsLab,                   kTechId.CommandStation,                kTechId.None)
     self.techTree:AddManufactureNode(kTechId.MAC,                 kTechId.RoboticsFactory,                kTechId.None,  true)
+
+
+    self.techTree:AddBuildNode(kTechId.BackupLight,            kTechId.None,                kTechId.None)
 
     self.techTree:AddBuyNode(kTechId.Axe,                         kTechId.None,              kTechId.None)
     self.techTree:AddBuyNode(kTechId.Pistol,                      kTechId.None,                kTechId.None)
     self.techTree:AddBuyNode(kTechId.Rifle,                       kTechId.None,                kTechId.None)
 
-    self.techTree:AddBuildNode(kTechId.SentryBattery,             kTechId.RoboticsFactory,      kTechId.None)
+    self.techTree:AddBuildNode(kTechId.SentryBattery,             kTechId.None,      kTechId.None)
 
     self.techTree:AddOrder(kTechId.Defend)
     self.techTree:AddOrder(kTechId.FollowAndWeld)
@@ -507,8 +510,9 @@ function MarineTeam:InitTechTree()
     self.techTree:AddBuildNode(kTechId.PhaseGate,                    kTechId.PhaseTech,        kTechId.None, true)
 
 
-    self.techTree:AddBuildNode(kTechId.Observatory,               kTechId.InfantryPortal,       kTechId.Armory)      
+    self.techTree:AddBuildNode(kTechId.Observatory,               kTechId.None,       kTechId.None)
     self.techTree:AddActivation(kTechId.DistressBeacon,           kTechId.Observatory)
+    self.techTree:AddActivation(kTechId.AdvancedBeacon, kTechId.None)
     self.techTree:AddActivation(kTechId.ReversePhaseGate,         kTechId.None)
 
     -- Door actions
@@ -554,7 +558,7 @@ function MarineTeam:InitTechTree()
 
     self.techTree:AddTechInheritance(kTechId.RoboticsFactory, kTechId.ARCRoboticsFactory)
 
-    self.techTree:AddManufactureNode(kTechId.ARC,    kTechId.ARCRoboticsFactory,     kTechId.None, true)
+    self.techTree:AddBuildNode(kTechId.ARC,    kTechId.None,     kTechId.None)
     self.techTree:AddActivation(kTechId.ARCDeploy)
     self.techTree:AddActivation(kTechId.ARCUndeploy)
 
@@ -565,7 +569,7 @@ function MarineTeam:InitTechTree()
     self.techTree:AddMenu(kTechId.WeaponsMenu)
 
     -- Marine tier 3
-    self.techTree:AddBuildNode(kTechId.PrototypeLab,          kTechId.AdvancedArmory,              kTechId.None)
+    self.techTree:AddBuildNode(kTechId.PrototypeLab,          kTechId.None,              kTechId.None)
 
     -- Jetpack
     self.techTree:AddResearchNode(kTechId.JetpackTech,           kTechId.PrototypeLab, kTechId.None)
@@ -624,7 +628,6 @@ function MarineTeam:SpawnWarmUpStructures()
 end
 
 function MarineTeam:SpawnInitialStructures(techPoint)
-
     self.warmupStructures = {}
     self.startTechPoint = techPoint
     self.spawnedInfantryPortal = 0
@@ -632,19 +635,54 @@ function MarineTeam:SpawnInitialStructures(techPoint)
 
     local tower, commandStation = PlayingTeam.SpawnInitialStructures(self, techPoint)
 
-    self:SpawnInfantryPortal(techPoint)
-    -- Spawn a second IP when marines have 9 or more players
-    if self:GetNumPlayers() >= kSecondInitialInfantryPortalMinPlayerCount then
+    -- Spawn a reasonable number of infantry portals (4 is usually sufficient)
+    local numPortals = 12
+    for i = 1, numPortals do
         self:SpawnInfantryPortal(techPoint)
     end
 
+    -- Spawn essential base structures
+    local origin = techPoint:GetOrigin()
+    local forward = techPoint:GetCoords().zAxis
+    local right = techPoint:GetCoords().xAxis
+
+    -- Create armory
+    local armory = MakeTechEnt(techPoint, Armory.kMapName, 5, -4, kMarineTeamType)
+
+    -- Create arms lab for upgrades
+    local armsLab = MakeTechEnt(techPoint, ArmsLab.kMapName, -5, -4, kMarineTeamType)
+    local armsLabTwo = MakeTechEnt(techPoint, ArmsLab.kMapName, -5, 4, kMarineTeamType)
+    local armsLabThree = MakeTechEnt(techPoint, ArmsLab.kMapName, 5, 4, kMarineTeamType)
+
+    -- Create advanced armory
+    local advArmory = MakeTechEnt(techPoint, AdvancedArmory.kMapName, 3.5, -2, kMarineTeamType)
+
+    -- Create prototype lab for advanced tech
+    local protoLab = MakeTechEnt(techPoint, PrototypeLab.kMapName, -3.5, 2, kMarineTeamType)
+
+    -- Create observatory for scans and beacons
+    local observatory = MakeTechEnt(techPoint, Observatory.kMapName, 6, 2, kMarineTeamType)
+
+    -- Create robotics factory for MACs and ARCs
+    local roboticsFactory = MakeTechEnt(techPoint, RoboticsFactory.kMapName, -6, -2, kMarineTeamType)
+
+    -- Spawn phase gates for quick travel if enabled
+    local phaseGate1 = MakeTechEnt(techPoint, PhaseGate.kMapName, 7, -7, kMarineTeamType)
+
+    -- Spawn some sentry batteries and turrets for defense
+--     local sentryBattery = MakeTechEnt(techPoint, BackupBattery.kMapName, 0, 7, kMarineTeamType)
+
+    -- Spawn some MACs for building/repairing
+    for i = 1, 8 do
+        local mac = MakeTechEnt(techPoint, MAC.kMapName, -2 + i*2, 5, kMarineTeamType)
+    end
+
+    -- In sandbox mode, ensure the advanced structures are available
     if Shared.GetCheatsEnabled() and MarineTeam.gSandboxMode then
-        MakeTechEnt(techPoint, AdvancedArmory.kMapName, 3.5, -2, kMarineTeamType)
-        MakeTechEnt(techPoint, PrototypeLab.kMapName, -3.5, 2, kMarineTeamType)
+        -- These are already created above, so no need to duplicate
     end
 
     return tower, commandStation
-
 end
 
 function MarineTeam:GetSpectatorMapName()

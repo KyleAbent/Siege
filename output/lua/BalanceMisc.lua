@@ -249,7 +249,7 @@ kStructureWeldRate = 90
 kDoorWeldTime = 15
 
 kHatchCooldown = 4
-kEggsPerHatch = 2
+kEggsPerHatch = 8
 kUpgradedEggsPerHive = 2
 
 kAlienRegenerationTime = 2

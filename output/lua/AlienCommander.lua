@@ -245,38 +245,7 @@ if Server then
     end
 
     function AlienCommander:BuildCystChain(start)
-        local cystPoints, parent, normals = GetCystPoints(start)
-
-        local team = self:GetTeam()
-        local cost = math.max(0, #cystPoints * kCystCost)
-
-        if cost <= team:GetTeamResources() and parent ~= nil then
-
-            local previousParent
-            local createdCysts = 0
-
-            for i = 1, #cystPoints do
-                -- align coords first, otherwise entity will redeploy cysts and then have coords set
-                local coords = AlignCyst(Coords.GetTranslation(cystPoints[i]), normals[i])
-                local cyst = CreateEntity(Cyst.kMapName, coords.origin, self:GetTeamNumber())
-                cyst:SetCoords(coords)
-
-                cyst:SetImmuneToRedeploymentTime(0.05)
-
-                if not cyst:GetIsConnected() and previousParent then
-                    cyst:ChangeParent(previousParent)
-                end
-
-                previousParent = cyst
-                createdCysts = createdCysts + 1
-
-            end
-
-            if createdCysts > 0 then
-                team:AddTeamResources(-createdCysts * kCystCost)
-                return true
-            end
-        end
+        return true
     end
 
     function AlienCommander:SelectTarget(target)
@@ -298,32 +267,8 @@ if Server then
 
         local success = false
 
-        if techId == kTechId.Cyst then
 
-            local trace = GetCommanderPickTarget(self, pickVec, worldCoordsSpecified, true, false)
-
-            if trace.fraction ~= 1 then
-
-                local legalBuildPosition, position, _, errorString = GetIsBuildLegal(techId, trace.endPoint, orientation, kStructureSnapRadius, self)
-
-                if legalBuildPosition then
-                    self:BuildCystChain(position)
-                end
-
-                if errorString then
-
-                    local commander = self:isa("Commander") and self or self:GetOwner()
-                    if commander then
-
-                        local message = BuildCommanderErrorMessage(errorString, position)
-                        Server.SendNetworkMessage(commander, "CommanderError", message, true)
-
-                    end
-
-                end
-
-            end
-        elseif techId >= kTechId.BuildTunnelEntryOne and techId <= kTechId.BuildTunnelExitFour then
+        if techId >= kTechId.BuildTunnelEntryOne and techId <= kTechId.BuildTunnelExitFour then
             local team = self:GetTeam()
             local teamInfo = team:GetInfoEntity()
 
@@ -481,9 +426,9 @@ if Server then
             
         end
 
-        if techId == kTechId.Cyst then
-            success = self:BuildCystChain(position)
-        elseif techId == kTechId.SelectDrifter then
+--         if techId == kTechId.Cyst then
+--             success = self:BuildCystChain(position)
+        if techId == kTechId.SelectDrifter then
 
             SelectNearest(self, "Drifter")
 
@@ -560,10 +505,11 @@ function AlienCommander:GetIsInQuickMenu(techId)
     return Commander.GetIsInQuickMenu(self, techId) or techId == kTechId.MarkersMenu
 end
 
-local gAlienMenuButtons =
+local gAlienMenuButtons = --Todo EggBeacon,StructureBeacon
 {
     [kTechId.BuildMenu] = { kTechId.Cyst, kTechId.Harvester, kTechId.DrifterEgg, kTechId.Hive,
-                            kTechId.ThreatMarker, kTechId.NeedHealingMarker, kTechId.ExpandingMarker, kTechId.BuildTunnelMenu },
+--                             kTechId.ThreatMarker, kTechId.NeedHealingMarker, kTechId.ExpandingMarker, kTechId.BuildTunnelMenu },
+                            kTechId.EggBeacon, kTechId.StructureBeacon, kTechId.None, kTechId.None },
 
     [kTechId.AdvancedMenu] = { kTechId.Crag, kTechId.Shade, kTechId.Shift, kTechId.Whip,
                                kTechId.Shell, kTechId.Veil, kTechId.Spur, kTechId.None },

@@ -168,22 +168,7 @@ function OnCommandCommTargetedActionWorld(client, message)
     
 end
 
-function OnCommandGorgeBuildStructure(client, message)
 
-    local player = client:GetControllingPlayer()
-    local origin, direction, structureIndex, lastClickedPosition, lastClickedPositionNormal = ParseGorgeBuildMessage(message)
-    
-    local dropStructureAbility = player:GetWeapon(DropStructureAbility.kMapName)
-
-    --[[
-        The player may not have an active weapon if the message is sent
-        after the player has gone back to the ready room for example.
-    ]]
-    if dropStructureAbility then
-        dropStructureAbility:OnDropStructure(origin, direction, structureIndex, lastClickedPosition, lastClickedPositionNormal)
-    end
-    
-end
 
 function OnCommandMutePlayer(client, message)
 
@@ -500,6 +485,32 @@ local function OnSetPlayerCallingCard(client, message)
 
 end
 
+
+local function OnCommandGorgeBuildStructure(client, message)
+    local player = client:GetControllingPlayer()
+    if player then
+            -- Use the regular structure table
+            local buildAbility = player:GetWeapon(DropStructureAbility.kMapName)
+            if buildAbility then
+                Print("[Regular Structure] Building with structureIndex: " .. message.structureIndex)
+                buildAbility:OnDropStructure(message.origin, message.direction, message.structureIndex, message.lastClickedPosition, message.lastClickedPositionNormal)
+            end
+    end
+end
+
+local function OnCommandGorgeAdvancedBuildStructure(client, message)
+    local player = client:GetControllingPlayer()
+
+    if player and player:isa("Gorge") then
+        local advancedBuildAbility = player:GetWeapon(DropStructureAbilityExtra.kMapName)
+        if advancedBuildAbility then
+            Print("[Advanced Build] Explicitly handling advanced structure with index: " .. message.structureIndex)
+            advancedBuildAbility:OnDropStructure(message.origin, message.direction, message.structureIndex, message.lastClickedPosition, message.lastClickedPositionNormal)
+        end
+    end
+end
+
+
 Server.HookNetworkMessage("SetPlayerCallingCard", OnSetPlayerCallingCard)
 Server.HookNetworkMessage("SetPlayerVariant", OnSetPlayerVariant)
 Server.HookNetworkMessage("SelectUnit", OnCommandSelectUnit)
@@ -509,6 +520,7 @@ Server.HookNetworkMessage("CommAction", OnCommandCommAction)
 Server.HookNetworkMessage("CommTargetedAction", OnCommandCommTargetedAction)
 Server.HookNetworkMessage("CommTargetedActionWorld", OnCommandCommTargetedActionWorld)
 Server.HookNetworkMessage("GorgeBuildStructure", OnCommandGorgeBuildStructure)
+Server.HookNetworkMessage("GorgeBuildAdvancedStructure", OnCommandGorgeAdvancedBuildStructure)
 Server.HookNetworkMessage("MutePlayer", OnCommandMutePlayer)
 Server.HookNetworkMessage("ChatClient", OnChatReceived)
 Server.HookNetworkMessage("CommanderPing", OnCommandCommPing)

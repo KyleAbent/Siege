@@ -11,7 +11,7 @@ Script.Load("lua/AlienUpgradeManager.lua")
 
 function Alien:HiveCompleteSoRefreshTechsManually()
 --     Print("HiveCompleteSoRefreshTechsManually")
-   UpdateAbilityAvailability(self, self:GetTierOneTechId(), self:GetTierTwoTechId(), self:GetTierThreeTechId())
+   UpdateAbilityAvailability(self, self:GetTierOneTechId(), self:GetTierTwoTechId(), self:GetTierThreeTechId(), self:GetTierFourTechId(), self:GetTierFiveTechId())
 end
 
 function Alien:TriggerEnzyme(duration)
@@ -284,6 +284,17 @@ end
 function Alien:GetTierThreeTechId()
     return kTechId.None
 end
+
+
+function Alien:GetTierFourTechId()
+    return kTechId.None
+end
+
+
+function Alien:GetTierFiveTechId()
+    return kTechId.None
+end
+
 
 function Alien:OnKill(attacker, doer, point, direction)
 

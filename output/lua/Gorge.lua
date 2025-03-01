@@ -11,6 +11,7 @@ Script.Load("lua/Alien.lua")
 Script.Load("lua/Weapons/Alien/SpitSpray.lua")
 Script.Load("lua/Weapons/Alien/InfestationAbility.lua")
 Script.Load("lua/Weapons/Alien/DropStructureAbility.lua")
+Script.Load("lua/Weapons/Alien/DropStructureAbilityExtra.lua")
 Script.Load("lua/Weapons/Alien/BabblerAbility.lua")
 Script.Load("lua/Weapons/Alien/BileBomb.lua")
 Script.Load("lua/Mixins/BaseMoveMixin.lua")
@@ -32,6 +33,8 @@ class 'Gorge' (Alien)
 
 if Server then    
     Script.Load("lua/Gorge_Server.lua")
+elseif Client then
+    Script.Load("lua/Siege/Client/Gorge_Client.lua")
 end
 
 local networkVars =
@@ -179,27 +182,8 @@ function Gorge:GetMovementSpecialEnergyCost()
     return kBellySlideCost
 end
 
-if Client then
 
-    function Gorge:GetHealthbarOffset()
-        return 1
-    end  
 
-    function Gorge:OverrideInput(input)
-
-        -- Always let the DropStructureAbility override input, since it handles client-side-only build menu
-
-        local buildAbility = self:GetWeapon(DropStructureAbility.kMapName)
-
-        if buildAbility then
-            input = buildAbility:OverrideInput(input)
-        end
-        
-        return Player.OverrideInput(self, input)
-        
-    end
-    
-end
 
 function Gorge:GetBaseArmor()
     return kGorgeArmor
@@ -526,74 +510,7 @@ function Gorge:PostUpdateMove(input)
 
 end
 
-if Client then
 
-    function Gorge:GetShowGhostModel()
-    
-        local weapon = self:GetActiveWeapon()
-        if weapon and weapon:isa("DropStructureAbility") then
-            return weapon:GetShowGhostModel()
-        end
-        
-        return false
-        
-    end
-    
-    function Gorge:GetGhostModelOverride()
-    
-        local weapon = self:GetActiveWeapon()
-        if weapon and weapon:isa("DropStructureAbility") and weapon.GetGhostModelName then
-            return weapon:GetGhostModelName(self)
-        end
-        
-    end
-    
-    function Gorge:GetGhostModelTechId()
-    
-        local weapon = self:GetActiveWeapon()
-        if weapon and weapon:isa("DropStructureAbility") then
-            return weapon:GetGhostModelTechId()
-        end
-        
-    end
-    
-    function Gorge:GetGhostModelCoords()
-    
-        local weapon = self:GetActiveWeapon()
-        if weapon and weapon:isa("DropStructureAbility") then
-            return weapon:GetGhostModelCoords()
-        end
-        
-    end
-    
-    function Gorge:GetLastClickedPosition()
-    
-        local weapon = self:GetActiveWeapon()
-        if weapon and weapon:isa("DropStructureAbility") then
-            return weapon.lastClickedPosition
-        end
-        
-    end
-
-    function Gorge:GetIsPlacementValid()
-    
-        local weapon = self:GetActiveWeapon()
-        if weapon and weapon:isa("DropStructureAbility") then
-            return weapon:GetIsPlacementValid()
-        end
-    
-    end
-
-    function Gorge:GetIgnoreGhostHighlight()
-    
-        local weapon = self:GetActiveWeapon()
-        if weapon and weapon:isa("DropStructureAbility") and weapon.GetIgnoreGhostHighlight then
-            return weapon:GetIgnoreGhostHighlight()
-        end
-        
-    end  
-
-end
 
 function Gorge:GetCanSeeDamagedIcon(ofEntity)
     return not ofEntity:isa("Cyst")

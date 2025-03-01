@@ -1,137 +1,188 @@
--- ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
---
--- lua\Weapons\Alien\PrimalScream.lua
---
---    Created by:   Andreas Urwale (andi@unknownworlds.com)
---
---    Primal Scream buffs friendly players
---
--- ========= For more information, visit us at http://www.unknownworlds.com =====================
+// NS2 - Classic -- Modified for siege ofc -- thanks dragon
+// lua\Weapons\Alien\Umbra.lua
+//
 
 Script.Load("lua/Weapons/Alien/Ability.lua")
+Script.Load("lua/Weapons/Alien/SpikesMixin.lua")
 Script.Load("lua/Weapons/Alien/StompMixin.lua")
 
-class 'PrimalScream' (Ability)
+local kStructureHitEffect = PrecacheAsset("cinematics/alien/lerk/bite_view_structure.cinematic")
+local kMarineHitEffect = PrecacheAsset("cinematics/alien/lerk/bite_view_marine.cinematic")
 
-PrimalScream.kMapName = "primalscream"
+local kCinematic = PrecacheAsset("cinematics/alien/lerk/primal2.cinematic")
+local kSound = PrecacheAsset("sound/NS2.fev/alien/lerk/taunt")
 
-local kAnimationGraph = PrecacheAsset("models/alien/onos/onos_view.animation_graph")
+class 'Primal' (Ability)
 
-local kPrimalScreamRange = 15
-local kPrimalScreamDuration = 1.5
+Primal.kMapName = "primal"
 
-PrimalScream.networkVars =
+local kAnimationGraph = PrecacheAsset("models/alien/lerk/lerk_view.animation_graph")
+local attackEffectMaterial = nil
+local kRange = 20
+
+if Client then
+    attackEffectMaterial = Client.CreateRenderMaterial()
+    attackEffectMaterial:SetMaterial("materials/effects/mesh_effects/view_blood.material")
+end
+
+local networkVars =
 {
-    attackButtonPressed = "boolean",
+    lastPrimaryAttackTime = "private time"
 }
 
-PrepareClassForMixin(Smash, StompMixin)
+AddMixinNetworkVars(SpikesMixin, networkVars)
 
-local kPrimalScreamRange = 20   
 
-function PrimalScream:OnCreate()
+local function GetWeaponEffects()
+local toreturn = {
+
+           primal_scream =
+    {
+        primalScreamEffects =
+        {
+            {cinematic = kCinematic},
+            {sound = "", silenceupgrade = true, done = true},
+            {player_sound = kSound},
+        },    
+    
+    },
+    
+    }
+    
+       return toreturn
+end
+
+local function TriggerPrimal(self, lerk)
+
+    local players = GetEntitiesForTeam("Alien", lerk:GetTeamNumber())
+    for index, player in ipairs(players) do
+        if player:GetIsAlive() and ((player:GetOrigin() - lerk:GetOrigin()):GetLength() < kPrimalScreamRange) then //and not player:GetIsOnFire() then
+            if player ~= lerk then
+                player:AddEnergy(kPrimalScreamEnergyGain)
+                player.primaledID = self:GetParent():GetId()
+            end
+            if player.PrimalScream  then
+                player:PrimalScream(kPrimalScreamDuration)
+                player:TriggerEffects("primal")
+                player:TriggerEffects("taunt")
+            end            
+        end
+         self:TriggerEffects("taunt")
+end
+
+    
+end
+
+function Primal:OnCreate()
 
     Ability.OnCreate(self)
-    
-    InitMixin(self, StompMixin)
-    
-    self.attackButtonPressed = false
-    
+
+	
+    self.primaryAttacking = false
+    self.lastPrimaryAttackTime = 0
+	
+    if Client then
+        InitMixin(self, ClientWeaponEffectsMixin)
+    end
+
 end
 
--- remove? primal scream cannot damage players
-function PrimalScream:GetDeathIconIndex()
-    return kDeathMessageIcon.Gore
+function Primal:GetSecondaryTechId()
+    return kTechId.Spikes
 end
-
-function PrimalScream:GetAnimationGraphName()
+function Primal:GetAnimationGraphName()
     return kAnimationGraph
 end
 
-function PrimalScream:GetEnergyCost()
+function Primal:GetEnergyCost(player)
     return kPrimalScreamEnergyCost
 end
 
-function PrimalScream:GetHUDSlot()
-    return 2
+function Primal:GetHUDSlot()
+    return 4
 end
 
-function PrimalScream:OnHolster(player)
-
-    Ability.OnHolster(self, player)
-    
-    self:OnAttackEnd()
-    
+function Primal:GetAttackDelay()
+    return kPrimalScreamROF
 end
 
-function PrimalScream:GetIconOffsetY(secondary)
-    return kAbilityOffset.PrimalScream
+function Primal:GetLastAttackTime()
+    return self.lastPrimaryAttackTime
 end
 
-local function PerformPrimalScream(self, player)
+function Primal:GetDeathIconIndex()
+
+    if self.secondaryAttacking then
+        return kDeathMessageIcon.Spikes
+    else
+        return kDeathMessageIcon.Umbra
+    end
     
-    if Server then
-    
-        Print("PerformPrimalScream")
-        player:TriggerEffects("primal_scream")
-        player:DeductAbilityEnergy(kPrimalScreamEnergyCost)
-    
-        for _, alien in ipairs( GetEntitiesForTeamWithinRange("Alien", player:GetTeamNumber(), player:GetOrigin(), kPrimalScreamRange) ) do
-            
-            if alien:GetIsAlive() then
-                alien:SetPrimalScream(kPrimalScreamDuration)
-            end
-        
+end
+function Primal:GetCanScream()
+return Shared.GetTime() > self:GetLastAttackTime() + kPrimalScreamROF
+end
+function Primal:OnPrimaryAttack(player)
+
+    if player:GetEnergy() >= self:GetEnergyCost() and self:GetCanScream() then
+        self:TriggerEffects("primal_scream")
+        if Server then        
+            TriggerPrimal(self, player)
         end
-        
+        self:GetParent():DeductAbilityEnergy(self:GetEnergyCost())
+        self.lastPrimaryAttackTime = Shared.GetTime()
+        self.primaryAttacking = true
+    else
+        self.primaryAttacking = false
     end
     
 end
 
-function PrimalScream:OnTag(tagName)
+function Primal:OnPrimaryAttackEnd()
+    
+    Ability.OnPrimaryAttackEnd(self)
+    self.primaryAttacking = false
+    
+end
 
-    if tagName == "stomp_hit" then
-    
-        local player = self:GetParent()
-        
-        if player then
-    
-            PerformPrimalScream(self, player)
-        
-            if player:GetEnergy() < kPrimalScreamEnergyCost then
-                self.attackButtonPressed = false
+if Client then
+
+    function Primal:TriggerFirstPersonHitEffects(player, target)
+
+        if player == Client.GetLocalPlayer() and target then
+            
+            local cinematicName = kStructureHitEffect
+            if target:isa("Marine") then
+                self:CreateBloodEffect(player)        
+                cinematicName = kMarineHitEffect
             end
         
+            local cinematic = Client.CreateCinematic(RenderScene.Zone_ViewModel)
+            cinematic:SetCinematic(cinematicName)
+        
+        
+        end
+
+    end
+
+    function Primal:CreateBloodEffect(player)
+    
+        if not Shared.GetIsRunningPrediction() then
+
+            local model = player:GetViewModelEntity():GetRenderModel()
+
+            model:RemoveMaterial(attackEffectMaterial)
+            model:AddMaterial(attackEffectMaterial)
+            attackEffectMaterial:SetParameter("attackTime", Shared.GetTime())
+
         end
         
-    end    
+    end
 
 end
+function Primal:OnUpdateAnimationInput(modelMixin)
 
-function PrimalScream:OnPrimaryAttack(player)
-
-    if player:GetEnergy() >= kPrimalScreamEnergyCost then
-        self.attackButtonPressed = true
-    else
-        self:OnAttackEnd()
-    end 
-
-end
-
-function PrimalScream:OnPrimaryAttackEnd(player)
-    
-    Ability.OnPrimaryAttackEnd(self, player)
-    self:OnAttackEnd()
-    
-end
-
-function PrimalScream:OnAttackEnd()
-    self.attackButtonPressed = false
-end
-
-function PrimalScream:OnUpdateAnimationInput(modelMixin)
-
-    local abilityString = "stomp"
+    local abilityString = "umbra"
     local activityString = "none"
     
     if self.attackButtonPressed then
@@ -145,4 +196,5 @@ function PrimalScream:OnUpdateAnimationInput(modelMixin)
     
 end
 
-Shared.LinkClassToMap("PrimalScream", PrimalScream.kMapName, PrimalScream.networkVars)
+
+Shared.LinkClassToMap("Primal", Primal.kMapName, networkVars)

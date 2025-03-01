@@ -47,6 +47,7 @@ Script.Load("lua/InfestationMap.lua")
 Script.Load("lua/NetworkDebug.lua")
 
 Script.Load("lua/JitConfig.lua")
+Script.Load("lua/Siege/Shared/SiegeGameRules.lua")
 
 Server.readyRoomSpawnList = table.array(32)
 
@@ -91,7 +92,8 @@ end
 -- Map entities with a higher priority are loaded first.
 --
 local kMapEntityLoadPriorities = { }
-kMapEntityLoadPriorities[NS2Gamerules.kMapName] = 1
+-- kMapEntityLoadPriorities[NS2Gamerules.kMapName] = 1
+kMapEntityLoadPriorities[SiegeGameRules.kMapName] = 1
 local function GetMapEntityLoadPriority(mapName)
 
     local priority = 0

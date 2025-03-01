@@ -737,11 +737,6 @@ function Hive:OnConstructionComplete()
         self:OnResearchComplete(kTechId.UpgradeToShiftHive)
     end
 
-    local cysts = GetEntitiesForTeamWithinRange( "Cyst", self:GetTeamNumber(), self:GetOrigin(), self:GetCystParentRange())
-    for _, cyst in ipairs(cysts) do
-        cyst:ChangeParent(self)
-    end
-
 --     local hiveCount = GetHiveAmount()
 
     self:UpdateAliensWeaponsManually()

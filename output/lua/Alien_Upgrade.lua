@@ -135,6 +135,25 @@ function GetHasAuraUpgrade(callingEntity)
     return HasUpgrade(callingEntity, kTechId.Aura)
 end
 
+function GetHasRebirthUpgrade(callingEntity)
+    return HasUpgrade(callingEntity, kTechId.Rebirth) //or callingEntity.RTDRedemption
+end
+
+function GetRedemptionLevel(callingEntity)
+    return callingEntity:GetRedemptionLevel()
+end
+
+function GetHasThickenedSkin()
+    return HasUpgrade(callingEntity, kTechId.ThickenedSkin)
+end
+
+function GetHasHunger()
+    return HasUpgrade(callingEntity, kTechId.Hunger)
+end
+
+function GetHasRedemptionUpgrade(callingEntity)
+    return HasUpgrade(callingEntity, kTechId.Redemption)
+end
 
 function GetHiveTypeForUpgrade(upgradeId)
 

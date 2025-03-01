@@ -75,6 +75,8 @@ function OwnerMixin:SetOwner(newOwner)
     
 end
 
+
+
 function OwnerMixin:GetOwner()
     return Shared.GetEntity(self.ownerId)
 end
@@ -110,4 +112,11 @@ function OwnerMixin:OnDestroy()
     
     self:SetOwner(nil)
     
+end
+
+
+--siege
+
+function OwnerMixin:GetIsOwner(entity)
+    return entity and entity:GetId() == self.ownerId
 end

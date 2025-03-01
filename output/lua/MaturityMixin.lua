@@ -36,13 +36,7 @@ MaturityMixin.optionalCallbacks =
 }
 
 local function GetMaturityRate(self)
-
-    if self.GetMaturityRate then
-        return (self:GetMaturityRate())
-    end
-
-    return kDefaultMaturityRate
-
+    return 1 --1 second !
 end
 
 function MaturityMixin:__initmixin()

@@ -7,12 +7,21 @@
 --
 -- ========= For more information, visit us at http://www.unknownworlds.com =====================
 
+function Lerk:CheckForPrimal()
+    if self:GetWeaponInHUDSlot(3) ~= nil then
+        self:GiveItem(Primal.kMapName)
+        self:SetActiveWeapon(LerkBite.kMapName)
+    end
+    return false
+end
+
 function Lerk:InitWeapons()
 
     Alien.InitWeapons(self)
 
     self:GiveItem(LerkBite.kMapName)    
     self:SetActiveWeapon(LerkBite.kMapName)
+    self:AddTimedCallback(function()  self:CheckForPrimal() end, 0.06)
     
 end
 
@@ -22,6 +31,14 @@ end
 
 function Lerk:GetTierThreeTechId()
     return kTechId.Spores
+end
+
+function Lerk:GetTierFourTechId()
+    return kTechId.PrimalScream
+end
+
+function Lerk:GetTierFiveTechId()
+    return kTechId.LerkBileBomb
 end
 
 function Lerk:GetPlayIdleSound()

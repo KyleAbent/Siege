@@ -425,7 +425,7 @@ local function UnlockAbility(forAlien, techId)
 end
 
 local function LockAbility(forAlien, techId)
-    Print("LockAbility callled for techId: %s", techId)
+--     Print("LockAbility callled for techId: %s", techId)
     local mapName = LookupTechData(techId, kTechDataMapName)    
     if mapName and forAlien:GetIsAlive() then
     
@@ -483,7 +483,7 @@ function GetHiveAmount()
        return hives
 end
 
-function UpdateAbilityAvailability(forAlien, tierOneTechId, tierTwoTechId, tierThreeTechId)
+function UpdateAbilityAvailability(forAlien, tierOneTechId, tierTwoTechId, tierThreeTechId, tierFourTechId, tierFiveTechId)
 
     local time = Shared.GetTime()
     if forAlien.timeOfLastNumHivesUpdate == nil or (time > forAlien.timeOfLastNumHivesUpdate + 0.5) then
@@ -537,9 +537,14 @@ function UpdateAbilityAvailability(forAlien, tierOneTechId, tierTwoTechId, tierT
 
             if forAlien.threeHives then
                 UnlockAbility(forAlien, tierThreeTechId)
+                UnlockAbility(forAlien, tierFourTechId)
+                UnlockAbility(forAlien, tierFiveTechId)
+
 --                 Print("F")
             else
                 LockAbility(forAlien, tierThreeTechId)
+                LockAbility(forAlien, tierFourTechId)
+                LockAbility(forAlien, tierFiveTechId)
 --                 Print("G")
             end
             

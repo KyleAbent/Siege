@@ -30,6 +30,7 @@ Script.Load("lua/MarineVariantMixin.lua")
 Script.Load("lua/AutoWeldMixin.lua")
 Script.Load("lua/Hud/GUINotificationMixin.lua")
 Script.Load("lua/PlayerStatusMixin.lua")
+Script.Load("lua/StunMixin.lua")
 
 if Client then
     Script.Load("lua/ExoFlashlight_Client.lua")
@@ -132,6 +133,7 @@ Exo.kMass = 980
 Exo.kXZExtents = 0.55
 Exo.kYExtents = 1.2
 
+AddMixinNetworkVars(StunMixin, networkVars)
 AddMixinNetworkVars(BaseMoveMixin, networkVars)
 AddMixinNetworkVars(GroundMoveMixin, networkVars)
 AddMixinNetworkVars(CameraHolderMixin, networkVars)
@@ -194,6 +196,7 @@ function Exo:OnCreate()
     InitMixin(self, GUINotificationMixin)
     InitMixin(self, ExoVariantMixin)
     InitMixin(self, PlayerStatusMixin)
+    InitMixin(self, StunMixin)
     
     self:SetIgnoreHealth(true)
     
@@ -1575,6 +1578,20 @@ function Exo:PlayerCameraCoordsAdjustment(cameraCoords)
     return cameraCoords
 
 end
+
+
+function Exo:GetIsStunAllowed()
+    return not self.timeLastStun or self.timeLastStun + 8 < Shared.GetTime()
+end
+
+function Exo:OnStun()
+         if Server then
+                local stunwall = CreateEntity(StunWall.kMapName, self:GetOrigin(), 2)
+                StartSoundEffectForPlayer(AlienCommander.kBoneWallSpawnSound, self)
+        end
+end
+
+
 
 if Server then
     

@@ -93,10 +93,6 @@ local networkVars =
     m_attachPoint = "integer (-1 to 0)",
     m_parentId = "integer (-1 to 0)",
     
-    -- Track our parentId
-    parentId = "entityid",
-    hasChild = "boolean",
-    
     -- if we are connected. Note: do NOT use on the server side when calculating reconnects/disconnects,
     -- as the random order of entity update means that you can't trust it to reflect the actual connect/disconnects
     -- used on the client side by the ui to determine connection status for potently cyst building locations
@@ -222,7 +218,7 @@ function Cyst:OnCreate()
         
     elseif Client then
         InitMixin(self, CommanderGlowMixin)
-        self.connectedFraction = 0
+        self.connectedFraction = 1
     end
 
     self:SetPhysicsCollisionRep(CollisionRep.Move)
@@ -300,7 +296,7 @@ function Cyst:OnInitialized()
     if Server then
     
         -- start out as disconnected; wait for impulse to arrive
-        self.connected = false
+        self.connected = true
         
         self.nextUpdate = Shared.GetTime()
         self.impulseActive = false
@@ -435,23 +431,20 @@ function Cyst:GetCanBeUsed(player, useSuccessTable)
     useSuccessTable.useSuccess = false    
 end
 
---
--- Note: On the server side, used GetIsActuallyConnected()!
---
-function Cyst:GetIsConnected() 
-    return self.connected
-end
-
 function Cyst:GetIsConnectedAndAlive()
-    return self.connected and self:GetIsAlive()
+    return self:GetIsAlive()
 end
 
-function Cyst:GetDescription()
-
-    local prePendText = ConditionalValue(self:GetIsConnected(), "", "Unconnected ")
-    return prePendText .. ScriptActor.GetDescription(self)
-    
+function Cyst:GetIsConnected()
+    return true  -- Always return true
 end
+
+-- function Cyst:GetDescription()
+--
+--     local prePendText = ConditionalValue(self:GetIsConnected(), "", "Unconnected ")
+--     return prePendText .. ScriptActor.GetDescription(self)
+--
+-- end
 
 function Cyst:OnOverrideSpawnInfestation(infestation)
 
@@ -470,12 +463,6 @@ function Cyst:CanBeBuilt()
     if self:GetIsBuilt() then
         return false
     end
-
-    local parent = self:GetCystParent()
-    if not parent or not parent:GetIsBuilt() then
-        return false
-    end
-
     return true
 end
 
@@ -487,9 +474,6 @@ function Cyst:GetHealSprayBuildAllowed()
     return self:CanBeBuilt()
 end
 
-function Cyst:GetHasChild()
-    return self.hasChild
-end
 
 if Client then
     
@@ -510,17 +494,6 @@ if Client then
 
 end
 
-function Cyst:GetCystParent()
-
-    local parent
-
-    if self.parentId and self.parentId ~= Entity.invalidId then
-        parent = Shared.GetEntity(self.parentId)
-    end
-    
-    return parent
-    
-end
 
 function MarkPotentialDeployedCysts(ents, origin)
 
@@ -535,150 +508,6 @@ function MarkPotentialDeployedCysts(ents, origin)
     
 end
 
---
--- Returns a parent and the track from that parent, or nil if none found.
---
-function GetCystParentFromPoint(origin, normal, connectionMethodName, optionalIgnoreEnt, teamNumber)
-
-    PROFILE("Cyst:GetCystParentFromPoint")
-    
-    local ents = GetSortedListOfPotentialParents(origin, teamNumber, kCystMaxParentRange, kHiveCystParentRange)
-    
-    if Client then
-        MarkPotentialDeployedCysts(ents, origin)
-    end
-    
-    teamNumber = teamNumber or kAlienTeamType
-    for i = 1, #ents do
-    
-        local ent = ents[i]
-        
-        -- must be either a built hive or an cyst with a connected infestation
-        if optionalIgnoreEnt ~= ent and
-           ((ent:isa("Hive") and ent:GetIsBuilt()) or (ent:isa("Cyst") and ent[connectionMethodName](ent))) then
-            
-            local range = (origin - ent:GetOrigin()):GetLength()
-            if range <= ent:GetCystParentRange() then
-            
-                -- check if we have a track from the entity to origin
-                local endOffset = 0.1
-                if ent:isa("Hive") then
-                    endOffset = 3
-                end
-                
-                
-                -- The pathing somehow is able to return two different path ((A -> B) != (B -> A))
-                -- Ex: Cysting in derelict between the RT in "Turbines" (a bit above the rt), and "Heat Transfer"
-                --     You can check those path with a drifter, it will take two different route.
-                local isReachable1, path1 = CreateBetween(origin, normal, ent:GetOrigin(), ent:GetCoords().yAxis, 0.1, endOffset)
-                local isReachable2, path2 = CreateBetween(ent:GetOrigin(), ent:GetCoords().yAxis, origin, normal, 0.1, endOffset)
-                if isReachable1 and path1 and isReachable2 and path2 then
-                
-                    -- Check that the total path length is within the range.
-                    local pathLength1 = GetPointDistance(path1)
-                    local pathLength2 = GetPointDistance(path2)
-                    if pathLength1 <= ent:GetCystParentRange() then
-                        return ent, path1
-                    end
-                    if pathLength2 <= ent:GetCystParentRange() then
-                        local points = PointArray()
-                    
-                        if cystChainDebug then
-                            Log("GetCystParentFromPoint() Regular path didn't worked, using the reverse")
-                end
-                
-                        -- Reverse the path points so we still get an array of points from A to B
-                        for i = 1, #path2 do
-                            Pathing.InsertPoint(points, 1, path2[i])
-            end
-                        return ent, points
-                    end
-            
-        end
-        
-    end
-    
-        end
-        
-    end
-    
-    return nil, nil
-    
-end
-
---
--- Return true if a connected cyst parent is availble at the given origin normal, and no destroyed cysts present
---
-function GetIsDeadCystNearby(origin, teamNumber)
-
-    local deadCyst = false
-        
-    teamNumber = teamNumber or kAlienTeamType
-    for _, cyst in ipairs(GetEntitiesForTeamWithinRange("Cyst", teamNumber, origin, kInfestationRadius)) do
-        
-        if not cyst:GetIsAlive() then
-            deadCyst = true
-            break
-        end
-        
-    end
-    
-    return deadCyst
-
-end
-
---
--- Returns a ghost-guide table for gui-use.
---
-function GetCystGhostGuides(commander)
-
-    local parent, path = commander:GetCystParentFromCursor()
-    local result = { }
-    
-    if parent then
-        result[parent] = parent:GetCystParentRange()
-    end
-    
-    return result
-    
-end
-
-function GetSortedListOfPotentialParents(origin, teamNumber, maxCystParentDistance, maxHiveParentDistance)
-    
-    teamNumber = teamNumber or kAlienTeamType
-    maxCystParentDistance = maxCystParentDistance or kCystMaxParentRange
-    maxHiveParentDistance = maxHiveParentDistance or kHiveCystParentRange
-    
-    local parents = {}
-    local hives = GetEntitiesForTeamWithinRange("Hive", teamNumber, origin, maxHiveParentDistance)
-    local cysts = GetEntitiesForTeamWithinRange("Cyst", teamNumber, origin, maxCystParentDistance)
-    
-    table.copy(hives, parents)
-    table.copy(cysts, parents, true)
-    Shared.SortEntitiesByDistance(origin, parents)
-    
-    -- Filter out invalid parents
-    for i = #parents, 1, -1 do
-        local parent = parents[i]
-        local removeEntry = false
-
-        if parent:isa("Hive") then
-            removeEntry = not parent:GetIsBuilt()
-        elseif parent:isa("Cyst") then
-            removeEntry = not parent:GetIsConnected()
-        else
-            Log("Unknown parent type: " .. EntityToString(parent))
-        end
-
-        removeEntry = removeEntry or not parent:GetIsAlive()
-        if removeEntry then
-            table.remove(parents, i)
-        end
-    end
-    
-    return parents
-    
-end
 
 -- Temporarily don't use "target" attach point
 function Cyst:GetEngagementPointOverride()
@@ -686,7 +515,7 @@ function Cyst:GetEngagementPointOverride()
 end
 
 function Cyst:GetIsHealableOverride()
-  return self:GetIsAlive() and self:GetIsConnected()
+  return self:GetIsAlive()
 end
 
 function Cyst:PerformActivation(techId, position, normal, commander)
@@ -742,84 +571,6 @@ function Cyst:OnUpdateRender()
     
 end
 
-function Cyst:OverrideHintString(hintString)
-
-    if not self:GetIsConnected() then
-        return "CYST_UNCONNECTED_HINT"
-    end
-    
-    return hintString
-    
-end
-
-local kCystTraceStartPoint =
-{
-    Vector(0.2, 0.3, 0.2),
-    Vector(-0.2, 0.3, 0.2),
-    Vector(0.2, 0.3, -0.2),
-    Vector(-0.2, 0.3, -0.2),
-
-}
-
-local kDownVector = Vector(0, -1, 0)
-
-local function GetCystDowntraceTrace(origin, collisionRep, physicsMask, filter)
-
-    local startPoint = origin + Vector(0,  1.0, 0)
-    local endPoint = origin + Vector(0, -6.0, 0)
-
-    for i = 0, 5 do
-        local traceBoxVector = Vector(0.1,0.1,0.1)
-        local groundTrace = Shared.TraceBox(traceBoxVector, startPoint, endPoint,  collisionRep, physicsMask, EntityFilterAllButIsa("TechPoint"))
-
-        -- First trace is for the building placement check (don't go throw map tiny holes or stairs)
-        if groundTrace.fraction < 1 then
-
-            local distToFloor = startPoint:GetDistanceTo(groundTrace.endPoint)
-            local traceFrom = startPoint + Vector(0, -distToFloor + 0.25, 0)
-            local traceTo = traceFrom + Vector(0, -0.75, 0)
-            local preciseTrace = Shared.TraceRay(traceFrom, traceTo, collisionRep, physicsMask, filter)
-
-            -- Second check is to get the exact ground offset
-            if preciseTrace.fraction < 1 then
-                return true, preciseTrace
-            end
-        end
-
-        startPoint = startPoint + Vector(0.01, 0.01, 0.01)
-        endPoint = endPoint + Vector(0.01, 0.01, 0.01)
-    end
-
-    return false, nil
-end
-
-function AlignCyst(coords, normal)
-
-    if Server and normal then
-    
-        -- get average normal:
-        for _, startPoint in ipairs(kCystTraceStartPoint) do
-        
-            local startTrace = coords:TransformPoint(startPoint)
-
-            local success, trace = GetCystDowntraceTrace(startTrace, CollisionRep.Select, PhysicsMask.CommanderBuild, EntityFilterAll())
-            if success and trace.fraction ~= 1 then
-                normal = normal + trace.normal
-            end
-        
-        end
-        
-        normal:Normalize()
-
-        coords.yAxis = normal
-        coords.xAxis = coords.yAxis:CrossProduct(coords.zAxis)
-        coords.zAxis = coords.xAxis:CrossProduct(coords.yAxis)
-
-    end
-    
-    return coords
-
-end
 
 function Cyst:SetIncludeRelevancyMask(includeMask)
 
@@ -842,429 +593,6 @@ local function IsPathable(position)
 
 end
 
--- Takes a position (vector), and returns the path from the given position to the closest connected
--- parent (connected cyst or hive).
--- returns: PointArray path
---          Entity parent
-function FindPathToClosestParent(origin, teamNumber)
-
-    PROFILE("Cyst:FindPathToClosestParent")
-
-    teamNumber = teamNumber or kAlienTeamType
-    
-    local currentPathLength = 100000
-    local closestConnectedPathLength = 100000
-    
-    local currentPath = PointArray()
-
-    local closestParent, closestConnectedParent
-    local maxValidParentTry = 10 -- Maximum number of valid parents we test to pick the closest path
-    
-    if not IsPathable(origin) then
-        return currentPath, nil
-    end
-
-    local parents = GetSortedListOfPotentialParents(origin, teamNumber, kParentSearchRange, kParentSearchRange)
-    for i = 1, #parents do
-    
-        local parent = parents[i]
-        
-        if true then -- Parent is always valid, check done by GetSortedListOfPotentialParents()
-        
-            local pathLength = 0
-            local isReachable, path = CreateBetween(parent:GetOrigin(), parent:GetCoords().yAxis, origin, kPointOffset)
-
-            if parent:GetOrigin():GetDistanceTo(origin) > currentPathLength then
-                break
-            end
-            
-            pathLength = GetPointDistance(path)
-            
-            -- 600 is enough to cover most maps from one end to an other
-            if isReachable and 0 < #path and #path < 600 and pathLength < 600
-            then
-
-                maxValidParentTry = math.max(0, maxValidParentTry - 1)
-                if pathLength < currentPathLength then
-
-                currentPath = path
-                currentPathLength = pathLength
-                closestParent = parent
-                
-            end            
-            end
-        
-        
-        end
-    
-        if maxValidParentTry == 0 then
-            break
-    end
-    
-    end
-    
-    return currentPath, closestParent
-
-end
-
-function GetCystParentAvailable(techId, origin, normal, commander)
-
-    PROFILE("Cyst:GetCystParentAvailable")
-
-    local teamNumber = commander and commander:GetTeamNumber() or kAlienTeamType
-    local parents = GetEntitiesForTeamWithinRange("Cyst", teamNumber, origin, kParentSearchRange)
-    table.copy(GetEntitiesForTeamWithinRange("Hive", teamNumber, origin, kParentSearchRange), parents, true)
-    
-    return #parents > 0
-
-end
-
-function GetCystPoints_GetPrettyPrintStr(splitPoints, existing)
-    local logMsg = ""
-    for i = 1, #splitPoints do
-        logMsg = logMsg .. " -> " .. ((existing and existing[i]) and "(EC)" or "(C)")
-    end
-    return logMsg
-end
-    
-function GetCystPoints_AddPointAtValues(splitPoints, normals, existing, exist, insertIndex, point, normal)
-    insertIndex = (insertIndex or (#splitPoints + 1))
-    -- Shift all existing offset if needed
-    for i = #splitPoints, insertIndex, -1 do
-        if existing[i] then
-            existing[i + 1] = existing[i]
-            existing[i] = nil
-        end
-    end
-
-    table.insert(splitPoints, insertIndex, point)
-    table.insert(normals, insertIndex, normal)
-
-    if exist then
-        existing[insertIndex] = true
-    end
-end
-
-function GetCystPoints_AddPointAt(origin, splitPoints, normals, existing, exist, insertIndex)
-    -- Insert a cyst point into @splitPoints and @normals
-    PROFILE("Cyst:GetCystPoints_AddPointAt")
-
-    local success, trace = GetCystDowntraceTrace(origin, CollisionRep.Default, PhysicsMask.CystBuild, EntityFilterAllButIsa("TechPoint"))
-
-    if success and trace.fraction < 1 then
-        GetCystPoints_AddPointAtValues(splitPoints, normals, existing, exist, insertIndex,
-                                       trace.endPoint, trace.normal)
-        return true, "No error"
-    end
-
-    return false, "Shared.TraceRay() failed (no valid point found)"
-end
-
-function GetCystPoints_AddSrcDstCyst(path, splitPoints, normals, existing, teamNumber)
-    -- Add first/last point of the chain into @splitPoints
-    -- If the last point is too close to a cyst, don't recreate it (mark as existing, don't destroy it)
-    PROFILE("Cyst:GetCystPoints_AddSrcDstCyst")
-
-    local distToReuse = 1.50
-    local rval, rmsg = true, "No error"
-    local srcOrig, dstOrig  = path[1], path[#path]
-    local cystAroundSrc     = GetEntitiesForTeamWithinRange("Cyst", teamNumber, srcOrig, distToReuse)
-    local cystAroundDst     = GetEntitiesForTeamWithinRange("Cyst", teamNumber, dstOrig, distToReuse)
-
-    if #cystAroundSrc == 0 then
-        cystAroundSrc = GetEntitiesForTeamWithinRange("Hive", teamNumber, srcOrig, distToReuse)
-    end
-    if #cystAroundDst == 0 then
-        cystAroundDst = GetEntitiesForTeamWithinRange("Hive", teamNumber, dstOrig, distToReuse)
-    end
-
-    Shared.SortEntitiesByDistance(srcOrig, cystAroundSrc)
-    Shared.SortEntitiesByDistance(dstOrig, cystAroundDst)
-
-    local cystAtSrc     = (#cystAroundSrc > 0 and cystAroundSrc[1] or nil)
-    local cystAtDst     = (#cystAroundDst > 0 and cystAroundDst[1] or nil)
-    local srcPointOrig  = cystAtSrc and cystAtSrc:GetOrigin() or srcOrig
-    local dstPointOrig  = cystAtDst and cystAtDst:GetOrigin() or dstOrig
-
-    rval, rmsg = GetCystPoints_AddPointAt(srcPointOrig, splitPoints, normals, existing, cystAtSrc ~= nil)
-    if rval then
-        rval, rmsg = GetCystPoints_AddPointAt(dstPointOrig, splitPoints, normals, existing, cystAtDst ~= nil)
-    end
-    return rval, rmsg
-end
-
-function GetCystPoints_AddExistingCysts(path, splitPoints, normals, existing, teamNumber)
-    -- Follow path and add existing cysts along it we can reuse for the given chain
-
-    PROFILE("Cyst:GetCystPoints_AddExistingCysts")
-
-    -- Area around a pathing point below which we reuse it
-    local cystSearchRange = kCystRedeployRange + 1
-    local function _isCystInOurWay(cyst, path, i)
-        if i + 1 <= #path and cyst:GetOrigin():GetDistanceTo(path[i]) <= cystSearchRange then
-            local dist1 = GetPathDistance(path[i], cyst:GetOrigin())
-            local dist2 = dist1 <= cystSearchRange and GetPathDistance(path[i + 1], cyst:GetOrigin())
-
-            return dist1 <= cystSearchRange and dist2 < dist1
-        end
-        return false
-    end
-
-    local rval, rmsg = true, "No error"
-    local cystFound = false
-    local cystsFound = {}
-    local currentDist = 0
-
-    for i = 2, #path do
-        local cysts = GetEntitiesForTeamWithinRange("Cyst", teamNumber, path[i], kCystRedeployRange + 1)
-
-        if #cysts > 0 then
-            Shared.SortEntitiesByDistance(path[i], cysts)
-            for _, cyst in ipairs(cysts)
-            do
-                if cyst:GetIsAlive() and not cystsFound[cyst] and _isCystInOurWay(cyst, path, i) then
-                    cystsFound[cyst] = true
-                    rval, rmsg = GetCystPoints_AddPointAt(cyst:GetOrigin(), splitPoints, normals,
-                                                          existing, true, #splitPoints)
-                    if not rval then
-                        return rval, rmsg
-                    end
-                    break
-                end
-            end
-            currentDist = 0
-        end
-
-        currentDist = currentDist + path[i - 1]:GetDistanceTo(path[i])
-    end
-
-    return rval, rmsg
-end
-
-function GetCystPoints_BuildInBetweenCysts(path, splitPoints, normals, existing, teamNumber)
-    -- Build a cyst chain along @path excluding the first and the final point.
-
-    PROFILE("Cyst:GetCystPoints_BuildInBetweenCysts")
-
-    local rval, rmsg = true, "No error"
-
-    local maxDistance = kCystMaxParentRange - 1.5
-    local minDistance = kCystRedeployRange - 1
-    
-    local pathLength = GetPointDistance(path)
-    
-    -- number of cysts needed for the new path, exluding the first and last cyst
-    local requiredCystCount = math.ceil(pathLength / maxDistance)
-    
-    -- a nice, even distance to spread the cysts out.  This is more desirable as opposed to having
-    -- every cyst its maximum distance from its parent until the very end of the chain.
-    local evenDistance = pathLength / requiredCystCount
-    
-    local fromPoint = Vector(path[1])
-    local distance = 0
-    local totalDistance = 0
-        local currentDistance = 0
-        
-    for i = 2, #path do
-
-        local point = path[i]
-        
-            if #splitPoints > 20 then
-            rval, rmsg = false, "split points exceeded 20 ("
-                .. "#path:" .. tostring(#path) .. ", "
-                .. "pathDist:" .. tostring(pathLength)
-                .. ")"
-            break
-            end
-        
-        distance = (path[i] - path[i - 1]):GetLength()
-        nextDistance = 0
-        if i + 1 <= #path then
-            nextDistance = (path[i + 1] - path[i]):GetLength()
-        end
-            
-        totalDistance   = totalDistance   + distance
-        currentDistance = currentDistance + distance
-                
-        if currentDistance < minDistance and currentDistance + nextDistance >= maxDistance then
-            if cystChainDebug then
-                Log("Pathing not smooth, two points are seperated by " .. tostring(nextDistance) .. "m (too much)")
-                end
-        end
-                
-        -- Add a cyst to the chain once we got past the maxDistance
-        -- Ensure also that the next distance is never going past our max.
-        -- (otherwise we could have unconnected cyst due to the pathing not being smooth enough by default)
-        if currentDistance > evenDistance or currentDistance + nextDistance >= maxDistance then
-            rval, rmsg = GetCystPoints_AddPointAt(point, splitPoints, normals, existing, false)
-            if not rval then
-                break
-            end
-                
-            -- Safety check to ensure the pathing is not failing us and that we are not placing
-            -- multiple cysts at the same place due to that.
-            -- This can happen in Kodiak when cysting from HangarBay into the map corner below on the right
-            local distFromLastPoint = fromPoint:GetDistanceTo(splitPoints[#splitPoints])
-            if distFromLastPoint <= 1 then
-                rval, rmsg = false, "Weird path with two points seperated by more than "
-                    .. string.format("%.2f", currentDistance) .. "m (according to the pathing distance) "
-                    .. "but only " .. string.format("%.2f", distFromLastPoint)
-                    .. "m when comparing the final origins ("
-                    .. "#path:" .. tostring(#path) .. ", "
-                    .. "pathDist:" .. tostring(pathLength) .. ")"
-                break
-            end
-                
-            fromPoint = splitPoints[#splitPoints]
-            -- currentDistance = (fromPoint - point):GetLength()
-            currentDistance = math.max(0, currentDistance - evenDistance)
-        end
-            
-        -- +1 to exclude the last cyst dropping
-        if #splitPoints + 1 == requiredCystCount then
-            break
-                end
-    end
-                
-    return rval, rmsg
-end
-                
-function GetCystPoints_FixCystChain(path, splitPoints, normals, existing, teamNumber)
-    PROFILE("Cyst:GetCystPoints_FixCystChain")
-                
-    -- Check if each point is connected (otherwise add X fixup cysts inbetween)
-    local isReachable, subPath = false, nil
-    local rval, rmsg = true, "No error"
-    local nbPointsBefore = #splitPoints
-                
-    for i = #splitPoints, 2, -1 do
-        local pointSrc, pointDst = splitPoints[i - 1], splitPoints[i]
-        local normalSrc, normalDst = normals[i - 1], normals[i]
-        local subSplitPoints, subNormals = {}, {}
-
-        -- Note: Ensure Cyst_Server.lua is using the same check as Cyst.lua for if a cyst is connected
-        isReachable, subPath = CreateBetween(pointSrc, normalSrc, pointDst, normalDst)
-
-        if not isReachable then
-            rval, rmsg = false, "FixCystChain: a cyst in the chain is unreacheable"
-            break
-            end
-            
-        if GetPointDistance(subPath) >= kCystMaxParentRange then
-        
-
-            rval, rmsg = GetCystPoints_BuildInBetweenCysts(subPath, subSplitPoints, subNormals, nil, teamNumber)
-
-            if not rval then
-                break
-        end
-    
-            for j = 1, #subSplitPoints do
-                GetCystPoints_AddPointAtValues(splitPoints, normals, existing, false, i + (j - 1),
-                                               subSplitPoints[j], subNormals[j])
-    end
-        end
-    end
-    
-    return rval, rmsg
-end
-    
-function GetCystPoints_RemoveExistingCysts(path, splitPoints, normals, existing, teamNumber)
-    -- Remove existing cysts added to the chain if they are not needed by the caller
-    PROFILE("Cyst:GetCystPoints_RemoveExistingCysts")
-
-    local toRemoveIdx = {}
-
-    for i = 1, #splitPoints do
-        if existing[i] then
-            table.insert(toRemoveIdx, i)
-            existing[i] = nil
-end
-    end
-
-    for i = 1, #toRemoveIdx do
-        table.remove(splitPoints, toRemoveIdx[i] - (i - 1))
-        table.remove(normals,     toRemoveIdx[i] - (i - 1))
-    end
-    return true, "No error"
-end
-
-function GetCystPoints_CountExistingCysts(path, splitPoints, normals, existing, teamNumber)
-    local nbExisting = 0
-
-    PROFILE("Cyst:GetCystPoints_CountExistingCystss")
-    for i = 1, #splitPoints do
-        nbExisting = nbExisting + (existing[i] and 1 or 0)
-    end
-    return nbExisting
-end
-
--- Takes a position (vector) and gives us where cysts should go between this position and
--- the closest connected cyst or hive. (first position is the parent's position!!!)
--- Returns: splitPoints -- a list of positions for the new cysts
---          parent -- the parent cyst it is connecting to
---          normals -- the normal vectors of the cysts (ie on flat ground == straight-up)
---          nbExisting -- the number of existing cyst the return points are composed of
---          existing -- the map of splitPoints indexes who are existing cysts
-local lastLogMsgPrinted = ""
-function GetCystPoints(origin, includeExistingCyst, teamNumber)
-    PROFILE("Cyst:GetCystPoints")
-
-    local rval, rmsg = true, "No error"
-
-    local splitPoints = {}
-    local normals = {}
-    local existing = {}
-    local nbExisting = 0
-    local path, parent = PointArray(), nil
-
-    if not IsPathable(origin) then
-        rmsg = "origin("
-            .. string.format("%.3f", origin.x) .. ", "
-            .. string.format("%.3f", origin.y) .. ", "
-            .. string.format("%.3f", origin.z) .. ") is not pathable"
-        if cystChainDebug then
-            Log("GetCystPoints(,"
-                    .. tostring(includeExistingCyst) .. "," .. tostring(teamNumber) .. ") error: " .. rmsg)
-        end
-        return {}, nil, {}, 0, {}
-    else
-        path, parent = FindPathToClosestParent(origin)
-    end
-
-    teamNumber = teamNumber or kAlienTeamType
-    if parent and #path > 0 then
-        if rval then rval, rmsg = GetCystPoints_AddSrcDstCyst(path, splitPoints, normals, existing, teamNumber) end
-        if rval then rval, rmsg = GetCystPoints_AddExistingCysts(path, splitPoints, normals, existing, teamNumber) end
-        if rval then rval, rmsg = GetCystPoints_FixCystChain(path, splitPoints, normals, existing, teamNumber) end
-        if rval then
-            if not includeExistingCyst then
-                rval, rmsg = GetCystPoints_RemoveExistingCysts(path, splitPoints, normals, existing, teamNumber)
-            else
-                nbExisting = GetCystPoints_CountExistingCysts(path, splitPoints, normals, existing, teamNumber)
-            end
-        end
-    else
-        rval, rmsg = false, string.format("%s%s", (parent and "" or "No parent found. "), (#path > 0 and "" or "Path not found (unreachable)."))
-    end
-
-    if rval then
-        if cystChainDebug then
-            local logMsg = GetCystPoints_GetPrettyPrintStr(splitPoints, existing)
-
-            if not Client or lastLogMsgPrinted ~= logMsg then
-                lastLogMsgPrinted = logMsg
-                Log("GetCystPoints(," .. tostring(includeExistingCyst) .. "," .. tostring(teamNumber) .. ") " .. logMsg)
-            end
-        end
-        return splitPoints, parent, normals, nbExisting, existing
-    end
-
-    if cystChainDebug then
-        Log("GetCystPoints(," .. tostring(includeExistingCyst) .. "," .. tostring(teamNumber) .. ") error: " .. rmsg)
-    end
-    return {}, nil, {}, 0, {}
-end
 
 function Cyst:GetCanCatalyzeHeal()
     return true

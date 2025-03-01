@@ -618,18 +618,44 @@ function AlienTeam:UpdateEggGeneration()
         self.timeLastEggUpdate = Shared.GetTime()
     end
 
-    if self.timeLastEggUpdate + ScaleWithPlayerCount(kEggGenerationRate, #GetEntitiesForTeam("Player", self:GetTeamNumber())) < Shared.GetTime() then
+    -- Get the current alien player count
+    local alienPlayerCount = #GetEntitiesForTeam("Player", self:GetTeamNumber())
 
+    -- Get the game info to access start time and siege timer
+    local gameInfo = GetGameInfoEntity()
+    local gameStartTime = gameInfo:GetStartTime()
+    local siegeTime = gameInfo:GetSiegeTime()
+    local currentTime = Shared.GetTime() - gameStartTime
+
+    -- Calculate progress toward siege time (clamped between 0 and 1)
+    local siegeProgress = math.min(1, math.max(0, currentTime / siegeTime))
+
+    -- Base egg generation rate (vanilla is kEggGenerationRate)
+    local baseRate = kEggGenerationRate
+
+    -- Scaling factor for large player counts
+    -- For 42 players, this will significantly decrease the spawn time
+    local playerCountScalar = math.min(1, 24 / math.max(24, alienPlayerCount))
+
+    -- As game progresses toward siege time, further reduce the egg generation time
+    -- This creates an accelerating spawn rate as the game progresses
+    local siegeScalar = 1 - (siegeProgress * 0.7)
+
+    -- Final egg generation rate calculation
+    local adjustedRate = baseRate * playerCountScalar * siegeScalar
+
+    -- Ensure there's a minimum spawn rate regardless of player count
+    adjustedRate = math.min(adjustedRate, baseRate * 0.25)
+
+    if self.timeLastEggUpdate + adjustedRate < Shared.GetTime() then
         local hives = GetEntitiesForTeam("Hive", self:GetTeamNumber())
         local builtHives = {}
 
-        -- allow only built hives to spawn eggs
+        -- Allow only built hives to spawn eggs
         for _, hive in ipairs(hives) do
-
             if hive:GetIsBuilt() and hive:GetIsAlive() then
                 table.insert(builtHives, hive)
             end
-
         end
 
         for _, hive in ipairs(builtHives) do
@@ -638,29 +664,36 @@ function AlienTeam:UpdateEggGeneration()
 
         self.timeLastEggUpdate = Shared.GetTime()
     end
-
 end
 
 function AlienTeam:UpdateAlienSpectators()
-
     if self.timeLastSpectatorUpdate == nil then
         self.timeLastSpectatorUpdate = Shared.GetTime() - 1
     end
 
     if self.timeLastSpectatorUpdate + 1 <= Shared.GetTime() then
-
         local alienSpectators = self:GetSortedRespawnQueue()
         local enemyTeamPosition = self:GetCriticalHivePosition()
 
-        for i = 1, #alienSpectators do
+        -- Get the game info to access start time and siege timer
+        local gameInfo = GetGameInfoEntity()
+        local gameStartTime = gameInfo:GetStartTime()
+        local siegeTime = gameInfo:GetSiegeTime()
+        local currentTime = Shared.GetTime() - gameStartTime
 
+        -- Calculate progress toward siege time (clamped between 0 and 1)
+        local siegeProgress = math.min(1, math.max(0, currentTime / siegeTime))
+
+        -- Adjust spawn time based on progress - starting at normal rate and reducing to 20% by siege time
+        -- This means spawn time becomes 80% faster (5x faster) by the time siege timer is reached
+        local adjustedSpawnTime = kAlienSpawnTime * (1 - (siegeProgress * 0.8))
+
+        for i = 1, #alienSpectators do
             local alienSpectator = alienSpectators[i]
             -- Do not spawn players waiting in the auto team balance queue.
             if alienSpectator:isa("AlienSpectator") and not alienSpectator:GetIsWaitingForTeamBalance() then
-
-                -- Consider min death time.
-                if alienSpectator:GetRespawnQueueEntryTime() + kAlienSpawnTime < Shared.GetTime() then
-
+                -- Use adjusted spawn time instead of fixed kAlienSpawnTime
+                if alienSpectator:GetRespawnQueueEntryTime() + adjustedSpawnTime < Shared.GetTime() then
                     local egg
                     if alienSpectator.GetHostEgg then
                         egg = alienSpectator:GetHostEgg()
@@ -668,26 +701,18 @@ function AlienTeam:UpdateAlienSpectators()
 
                     -- Player has no egg assigned, check for free egg.
                     if egg == nil then
-
                         local success = self:AssignPlayerToEgg(alienSpectator, enemyTeamPosition)
-
                         -- We have no eggs currently, makes no sense to check for every spectator now.
                         if not success then
                             break
                         end
-
                     end
-
                 end
-
             end
-
         end
 
         self.timeLastSpectatorUpdate = Shared.GetTime()
-
     end
-
 end
 
 function AlienTeam:Update(timePassed)
@@ -703,10 +728,10 @@ function AlienTeam:Update(timePassed)
     self:UpdateBioMassLevel()
 
     -- Todo: Make this event driven
-    for _, alien in ipairs(GetEntitiesForTeam("Alien", self:GetTeamNumber())) do
-        local shellLevel = alien:GetShellLevel()
-        alien:UpdateArmorAmount(shellLevel, alien:GetUpgradeLevel("bioMassLevel"))
-    end
+--     for _, alien in ipairs(GetEntitiesForTeam("Alien", self:GetTeamNumber())) do
+--         local shellLevel = alien:GetShellLevel()
+--         alien:UpdateArmorAmount(shellLevel, alien:GetUpgradeLevel("bioMassLevel"))
+--     end
 
 end
 
@@ -974,6 +999,7 @@ function AlienTeam:InitTechTree()
     self.techTree:AddTargetedActivation(kTechId.TeleportHive,        kTechId.ShiftHive,         kTechId.None)
     self.techTree:AddTargetedActivation(kTechId.TeleportEgg,         kTechId.ShiftHive,         kTechId.None)
     self.techTree:AddTargetedActivation(kTechId.TeleportHarvester,   kTechId.ShiftHive,         kTechId.None)
+    self.techTree:AddTargetedActivation(kTechId.SelfTeleport,   kTechId.ShiftHive,         kTechId.None)
 
     -- Shade
     self.techTree:AddPassive(kTechId.ShadeDisorient)
@@ -1033,6 +1059,7 @@ function AlienTeam:InitTechTree()
     self.techTree:AddResearchNode(kTechId.Umbra,               kTechId.BioMassSix, kTechId.None, kTechId.AllAliens)
     self.techTree:AddResearchNode(kTechId.Spores,              kTechId.BioMassSix, kTechId.None, kTechId.AllAliens)
 
+
     -- fade researches
     self.techTree:AddResearchNode(kTechId.MetabolizeEnergy,        kTechId.BioMassThree, kTechId.None, kTechId.AllAliens)
     self.techTree:AddResearchNode(kTechId.MetabolizeHealth,        kTechId.BioMassFive, kTechId.MetabolizeEnergy, kTechId.AllAliens)
@@ -1046,6 +1073,26 @@ function AlienTeam:InitTechTree()
     -- gorge structures
     self.techTree:AddBuildNode(kTechId.Hydra)
     self.techTree:AddBuildNode(kTechId.Clog)
+
+
+
+
+
+
+    --Siege
+    self.techTree:AddPassive(kTechId.PrimalScream,              kTechId.Spores, kTechId.None, kTechId.AllAliens)
+    self.techTree:AddBuildNode(kTechId.EggBeacon, kTechId.CragHive)
+    self.techTree:AddBuildNode(kTechId.StructureBeacon, kTechId.ShiftHive)
+
+    self.techTree:AddBuyNode(kTechId.Rebirth, kTechId.Shell, kTechId.None, kTechId.AllAliens)
+    self.techTree:AddBuyNode(kTechId.Redemption, kTechId.Shell, kTechId.None, kTechId.AllAliens)
+    self.techTree:AddBuyNode(kTechId.Hunger, kTechId.Spur, kTechId.None, kTechId.AllAliens)
+    self.techTree:AddBuyNode(kTechId.ThickenedSkin, kTechId.Shell, kTechId.None, kTechId.AllAliens)
+    self.techTree:AddPassive(kTechId.LerkBileBomb, kTechId.Spores, kTechId.None, kTechId.AllAliens)
+    self.techTree:AddPassive(kTechId.AcidRocket, kTechId.Stab, kTechId.None, kTechId.AllAliens)
+
+
+
 
     self.techTree:SetComplete()
 

@@ -104,7 +104,7 @@ function Whip:OnCreate()
     InitMixin(self, DamageMixin)
     InitMixin(self, AlienStructureMoveMixin, { kAlienStructureMoveSound = Whip.kWalkingSound })
     InitMixin(self, ConsumeMixin)
-    
+
     self.attackYaw = 0
     
     self.slapping = false
@@ -119,7 +119,7 @@ function Whip:OnCreate()
     -- to prevent collision with whip bombs
     self:SetPhysicsGroup(PhysicsGroup.WhipGroup)
     self:SetUpdates(true, kRealTimeUpdateRate)
-    
+
     if Server then
 
         self.targetId = Entity.invalidId
@@ -181,6 +181,31 @@ end
 
 function Whip:OverrideRepositioningSpeed()
     return Whip.kMoveSpeed
+end
+
+function Whip:OnOverrideOrder(order)
+    if order:GetType() == kTechId.Default then
+        -- Check if we're on infestation and not currently teleporting
+        if GetIsPointOnInfestation(self:GetOrigin()) and not self:GetIsTeleporting() and
+           not self:GetIsOnFire() and self:GetIsBuilt() and self:GetCanTeleport() and GetHasTech(self, kTechId.ShiftHive) then
+
+            -- Check cooldown
+            local now = Shared.GetTime()
+            if not self.lastSelfTeleportTime or (now - self.lastSelfTeleportTime > kSelfTeleportDelay)  then
+
+                -- Get target position and validate it
+                local destination = order:GetLocation()
+                if GetIsPointOnInfestation(destination) then
+                    -- Trigger teleport
+                    self:TriggerSelfTeleport(destination)
+                    self.lastSelfTeleportTime = now
+                    return true
+                end
+            end
+        end
+
+        return false  -- Don't allow default move behavior
+    end
 end
 
 -- --
@@ -317,14 +342,14 @@ end
 
 -- CQ: Predates Mixins, somewhat hackish
 function Whip:GetCanBeUsed(player, useSuccessTable)
-    useSuccessTable.useSuccess = false    
+    useSuccessTable.useSuccess = false
 end
 
 -- --- Commander interface
 
 function Whip:GetTechButtons(techId)
 
-    local techButtons = { kTechId.Slap, kTechId.Move, kTechId.None, kTechId.None,
+    local techButtons = { kTechId.SelfTeleport, kTechId.Slap, kTechId.None, kTechId.None,
                     kTechId.None, kTechId.None, kTechId.None, kTechId.Consume }
     
     if self:GetIsMature() then

@@ -25,6 +25,8 @@ Script.Load("lua/TunnelUserMixin.lua")
 Script.Load("lua/BabblerClingMixin.lua")
 Script.Load("lua/IdleMixin.lua")
 Script.Load("lua/LerkVariantMixin.lua")
+Script.Load("lua/Weapons/Alien/LerkBileBomb.lua")
+Script.Load("lua/Weapons/PredictedProjectile.lua")
 
 class 'Lerk' (Alien)
 
@@ -128,6 +130,7 @@ function Lerk:OnCreate()
     InitMixin(self, DissolveMixin)
     InitMixin(self, TunnelUserMixin)
     InitMixin(self, BabblerClingMixin)
+    InitMixin(self, PredictedProjectileShooterMixin)
     
     self.gliding = false
     self.lastTimeFlapped = 0

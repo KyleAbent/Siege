@@ -142,7 +142,7 @@ function DropStructureAbility:OnPrimaryAttackEnd()
 
         self.dropping = false
         self.mouseDown = false
-
+        self.menuActive = false
     end
 
 end
@@ -173,11 +173,20 @@ function DropStructureAbility:GetHasSecondary(player)
 end
 
 function DropStructureAbility:OnSecondaryAttack(player)
-
-    if player and self.previousWeaponMapName and player:GetWeapon(self.previousWeaponMapName) then
-        player:SetActiveWeapon(self.previousWeaponMapName)
+    if player then
+        -- Don't switch to the previous weapon if it's the other build menu
+        if self.previousWeaponMapName and
+           player:GetWeapon(self.previousWeaponMapName) and
+           self.previousWeaponMapName ~= DropStructureAbilityExtra.kMapName then
+            player:SetActiveWeapon(self.previousWeaponMapName)
+        else
+            -- Default to healspray if we're coming from the other build menu
+            local healspray = player:GetWeapon("spit_spray")
+            if healspray then
+                player:SetActiveWeapon(healspray:GetMapName())
+            end
+        end
     end
-
 end
 
 function DropStructureAbility:GetSecondaryEnergyCost()
@@ -209,6 +218,7 @@ function DropStructureAbility:PerformPrimaryAttack(player)
             if player:GetResources() >= cost and not self:GetHasDropCooldown() then
 
                 local message = BuildGorgeDropStructureMessage(player:GetEyePos(), player:GetViewCoords().zAxis, self.activeStructure, self.lastClickedPosition, self.lastClickedPositionNormal)
+                Print("DropStructureAbility sending GorgeBuildStructure for structure: " .. self.activeStructure)
                 Client.SendNetworkMessage("GorgeBuildStructure", message, true)
                 self.timeLastDrop = Shared.GetTime()
                 success = true
@@ -362,18 +372,25 @@ function DropStructureAbility:DropStructure(player, origin, direction, structure
 end
 
 function DropStructureAbility:OnDropStructure(origin, direction, structureIndex, lastClickedPosition, lastClickedPositionNormal)
+    Print("[OnDropStructure]Regular building: structureIndex = " .. tostring(structureIndex))
 
     local player = self:GetParent()
-
     if player then
+        -- Explicitly use the basic structures table
+        local supportedStructures = {
+            HydraStructureAbility,
+            ClogAbility,
+            WebsAbility,
+            BabblerEggAbility
+        }
 
-        local structureAbility = DropStructureAbility.kSupportedStructures[structureIndex]
+        local structureAbility = supportedStructures[structureIndex]
+        Print("Structure type: " .. (structureAbility and structureAbility:GetDropMapName() or "unknown"))
+
         if structureAbility then
             self:DropStructure(player, origin, direction, structureAbility, lastClickedPosition, lastClickedPositionNormal)
         end
-
     end
-
 end
 
 function DropStructureAbility:CreateStructure(coords, player, structureAbility, lastClickedPosition)
@@ -687,6 +704,10 @@ if Client then
     end
 
     function DropStructureAbility:OnSetActive()
+    end
+
+    function DropStructureAbility:GetIsGUIVisible()
+        return self.buildMenu:GetIsVisible()
     end
 
     function DropStructureAbility:OverrideInput(input)

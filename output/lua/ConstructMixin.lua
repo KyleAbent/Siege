@@ -62,6 +62,7 @@ function ConstructMixin:__initmixin()
     self.buildTime = 0
     self.buildFraction = 0
     self.timeOfLastHealSpray = 0
+    self.drifterEnzymeCount = 0
     
     -- Structures start with a percentage of their full health and gain more as they're built.
     if self.startsBuilt then
@@ -138,31 +139,36 @@ if Server then
         -- Only Alien structures auto build.
         -- Update build fraction every tick to be smooth.
         if not self:GetIsBuilt() and GetIsAlienUnit(self) then
-
             if not self.GetCanAutoBuild or self:GetCanAutoBuild() then
+                local drifterCount = self.drifterEnzymeCount or 0
 
-                local multiplier = self.hasDrifterEnzyme and kDrifterBuildRate or kAutoBuildRate
-                multiplier = multiplier * ( (HasMixin(self, "Catalyst") and self:GetIsCatalysted()) and kNutrientMistAutobuildMultiplier or 1 )
+                -- First determine if we're using drifter rate or auto build rate
+                local baseMultiplier = drifterCount > 0 and kDrifterBuildRate or kAutoBuildRate
+
+                -- Apply stacking bonus for multiple drifters
+                local multiplier = baseMultiplier
+                if drifterCount > 1 then
+                    -- Add 8% extra speed for each additional drifter (adjust this value as needed)
+                    multiplier = baseMultiplier * (1 + (drifterCount - 1) * 0.1)
+                end
+
+                -- Apply nutrient mist and other modifiers exactly as before
+                multiplier = multiplier * ((HasMixin(self, "Catalyst") and self:GetIsCatalysted()) and kNutrientMistAutobuildMultiplier or 1)
 
                 if self.GetAutoBuildRateMultiplier then
                     multiplier = multiplier * self:GetAutoBuildRateMultiplier()
                 end
 
                 self:Construct(deltaTime * multiplier)
-
             end
-
         end
 
         if self.timeDrifterConstructEnds then
-
             if self.timeDrifterConstructEnds <= Shared.GetTime() then
-
-                self.hasDrifterEnzyme = false
+                self.drifterEnzymeCount = math.max(0, (self.drifterEnzymeCount or 1) - 1)
+                self.hasDrifterEnzyme = self.drifterEnzymeCount > 0
                 self.timeDrifterConstructEnds = nil
-
             end
-
         end
 
         -- record this structure being placed (has to be in this function to have the correct origin)
@@ -527,10 +533,9 @@ function ConstructMixin:OnUse(player, elapsedTime, useSuccessTable)
 end
 
 function ConstructMixin:RefreshDrifterConstruct()
-
     self.timeDrifterConstructEnds = Shared.GetTime() + 0.3
-    self.hasDrifterEnzyme = true
-
+    self.drifterEnzymeCount = (self.drifterEnzymeCount or 0) + 1
+    self.hasDrifterEnzyme = true  -- Keep for backward compatibility
 end
 
 function ConstructMixin:OnHealSpray(gorge)

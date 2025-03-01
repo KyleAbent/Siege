@@ -258,6 +258,322 @@ AutoCommCommand:AddParam{ Type = "number", Optional = true }
 
 
 
+-------
+
+
+-- Helper functions to convert Vector and Angles objects to/from tables
+local function CDataToTable(cdata)
+    if type(cdata) ~= "cdata" then
+        return cdata -- Return as is if not a cdata type
+    end
+
+    -- Handle Vector objects
+    if cdata.x ~= nil and cdata.y ~= nil and cdata.z ~= nil then
+        return {
+            _type = "Vector",
+            x = cdata.x,
+            y = cdata.y,
+            z = cdata.z
+        }
+    end
+
+    -- Handle Angles objects - check if it has yaw, pitch, roll
+    if cdata.yaw ~= nil or cdata.pitch ~= nil or cdata.roll ~= nil then
+        return {
+            _type = "Angles",
+            yaw = cdata.yaw or 0,
+            pitch = cdata.pitch or 0,
+            roll = cdata.roll or 0
+        }
+    end
+
+    -- If we can't identify the specific type, try to convert to a generic table
+    local result = {}
+    -- Add a marker so we know it was a cdata type
+    result._type = "unknown_cdata"
+
+    -- Try to dump whatever properties it might have
+    -- This is a best-effort approach - not all cdata can be converted this way
+    local success, err = pcall(function()
+        -- Try to get any numeric indices
+        for i = 0, 10 do  -- arbitrary limit
+            pcall(function()
+                if cdata[i] ~= nil then
+                    result[i] = cdata[i]
+                end
+            end)
+        end
+
+        -- Try some common property names
+        local common_props = {"x", "y", "z", "w", "r", "g", "b", "a",
+                              "yaw", "pitch", "roll", "value", "id", "type"}
+        for _, prop in ipairs(common_props) do
+            pcall(function()
+                if cdata[prop] ~= nil then
+                    result[prop] = cdata[prop]
+                end
+            end)
+        end
+    end)
+
+    -- If we couldn't extract any properties, use string representation as a fallback
+    if not next(result) or not success then
+        -- Convert to string representation as last resort
+        result._string = tostring(cdata)
+    end
+
+    return result
+end
+
+local function TableToCData(tab)
+    if type(tab) ~= "table" then
+        return tab
+    end
+
+    -- Check if this was a Vector
+    if tab._type == "Vector" or (tab.x ~= nil and tab.y ~= nil and tab.z ~= nil) then
+        return Vector(tab.x, tab.y, tab.z)
+    end
+
+    -- Check if this was an Angles object
+    if tab._type == "Angles" or (tab.yaw ~= nil or tab.pitch ~= nil or tab.roll ~= nil) then
+        return Angles(tab.yaw or 0, tab.pitch or 0, tab.roll or 0)
+    end
+
+    -- For unknown types, just return the table
+    return tab
+end
+
+local function SaveLayout(client, slotNumber)
+    -- Get current map name to use in the filename
+    local mapName = Shared.GetMapName()
+    -- Initialize table to store structure data
+    local layoutData = {
+        powerPoints = {},
+        structures = {},
+        mapName = mapName
+    }
+
+    -- Use slot number or default to 1
+    slotNumber = slotNumber or 1
+
+    -- Save PowerPoint status
+    for _, powerPoint in ientitylist(Shared.GetEntitiesWithClassname("PowerPoint")) do
+        -- Skip if destroyed
+        if powerPoint:GetIsAlive() then
+            table.insert(layoutData.powerPoints, {
+                location = CDataToTable(powerPoint:GetOrigin()),
+                powerState = powerPoint:GetPowerState(),
+                isSocketed = powerPoint:GetIsSocketed(),
+                isBuilt = powerPoint:GetIsBuilt()
+            })
+        end
+    end
+
+    -- Get all structures with ConstructMixin except excluded types
+    local excludedTypes = {
+--         "CommandStation",
+--         "Hive",
+        "TechPoint",
+        "ResourcePoint"
+    }
+
+    -- Function to check if entity should be excluded
+    local function shouldExclude(entity)
+        for _, excludedType in ipairs(excludedTypes) do
+            if entity:isa(excludedType) then
+                return true
+            end
+        end
+        return false
+    end
+
+    -- Get all entities that have ConstructMixin
+    for _, entity in ientitylist(Shared.GetEntitiesWithTag("Construct")) do
+        if not shouldExclude(entity) and entity:GetIsBuilt() then
+            -- Store basic info about the structure, converting CData to table
+            table.insert(layoutData.structures, {
+                className = entity:GetClassName(),
+                location = CDataToTable(entity:GetOrigin()),
+                angles = CDataToTable(entity:GetAngles()),
+                teamNumber = entity:GetTeamNumber()
+            })
+        end
+    end
+
+    -- Create the filename using mapName and slotNumber
+    local filename = string.format("config://shine/layouts/%s_%s.json", mapName, slotNumber)
+
+    -- Save the layout data using Shine's JSON file API
+    local success = Shine.SaveJSONFile(layoutData, filename)
+
+    if success then
+        Shared.Message("Layout saved to " .. filename)
+        self:NotifyGeneric(nil, "Layout saved for map %s (slot %s)", true, mapName, slotNumber)
+    else
+        Shared.Message("Error saving layout to " .. filename)
+        self:NotifyGeneric(nil, "Error saving layout!", true)
+    end
+end
+
+local SaveLayoutCommand = self:BindCommand("sh_savelayout", "savelayout", SaveLayout)
+SaveLayoutCommand:Help("Saves the current structure layout for the map")
+SaveLayoutCommand:AddParam{ Type = "number", Optional = true }
+
+local function LoadLayout(client, slotNumber)
+    local mapName = Shared.GetMapName()
+    -- Use slot number or default to 1
+    slotNumber = slotNumber or 1
+
+    -- Create the filename using mapName and slotNumber
+    local filename = string.format("config://shine/layouts/%s_%s.json", mapName, slotNumber)
+
+    -- Load the layout data using Shine's JSON file API
+    local layoutData = Shine.LoadJSONFile(filename)
+
+    if not layoutData then
+        self:NotifyGeneric(nil, "No saved layout found for map %s (slot %s)", true, mapName, slotNumber)
+        return
+    end
+
+    -- Verify this layout is for the current map
+    if layoutData.mapName ~= mapName then
+        self:NotifyGeneric(nil, "Layout file is for different map!", true)
+        return
+    end
+
+    -- Make sure game is ready for entity creation
+    local gameRules = GetGamerules()
+    if not gameRules or not gameRules:GetGameStarted() then
+        self:NotifyGeneric(nil, "Game must be started before loading a layout", true)
+        return
+    end
+
+    -- Option to clear existing structures first (DISABLED by default)
+    local shouldClearExisting = false  -- Set to true if you want to clear structures first
+    if shouldClearExisting then
+        self:NotifyGeneric(nil, "Clearing existing structures...", true)
+        local clearedCount = 0
+        for _, entity in ientitylist(Shared.GetEntitiesWithTag("Construct")) do
+            -- Don't clear critical structures
+            if not entity:isa("CommandStation") and not entity:isa("Hive") and
+               not entity:isa("TechPoint") and not entity:isa("ResourcePoint") then
+                DestroyEntity(entity)
+                clearedCount = clearedCount + 1
+            end
+        end
+        self:NotifyGeneric(nil, "Cleared %d existing structures", true, clearedCount)
+    end
+
+    -- Success counters for reporting
+    local powerPointsCreated = 0
+    local structuresCreated = 0
+    local powerPointsFailed = 0
+    local structuresFailed = 0
+
+    -- First handle PowerPoints
+    self:NotifyGeneric(nil, "Setting up power points...", true)
+    for _, powerData in ipairs(layoutData.powerPoints or {}) do
+        local powerLocation = TableToCData(powerData.location)
+
+        -- Find existing PowerPoint at this location
+        local powerPoint = nil
+        for _, pp in ientitylist(Shared.GetEntitiesWithClassname("PowerPoint")) do
+            if (pp:GetOrigin() - powerLocation):GetLength() < 1 then
+                powerPoint = pp
+                powerPointsCreated = powerPointsCreated + 1
+                self:NotifyGeneric(nil, "Updated existing PowerPoint at location: %.2f, %.2f, %.2f",
+                    true, powerLocation.x, powerLocation.y, powerLocation.z)
+                break
+            end
+        end
+
+        if powerPoint then
+            -- Set its state
+            if powerData.isSocketed and not powerPoint:GetIsSocketed() then
+                powerPoint:SocketPowerNode()
+            end
+            if powerData.isBuilt and not powerPoint:GetIsBuilt() then
+                powerPoint:SetConstructionComplete()
+            end
+        else
+            powerPointsFailed = powerPointsFailed + 1
+            self:NotifyGeneric(nil, "Could not find PowerPoint at: %.2f, %.2f, %.2f",
+                true, powerLocation.x, powerLocation.y, powerLocation.z)
+        end
+    end
+
+    -- Then spawn other structures
+    self:NotifyGeneric(nil, "Creating structures...", true)
+    for i, structData in ipairs(layoutData.structures or {}) do
+        -- Create fresh Vector objects from the stored data
+        local location = Vector(structData.location.x, structData.location.y, structData.location.z)
+        local angles = Angles(structData.angles.yaw or 0, structData.angles.pitch or 0, structData.angles.roll or 0)
+
+        -- Check if there's already an entity at this location
+        local existingEntity = nil
+        for _, entity in ientitylist(Shared.GetEntitiesWithClassname(structData.className)) do
+            if (entity:GetOrigin() - location):GetLength() < 1 then
+                existingEntity = entity
+                break
+            end
+        end
+
+        if existingEntity then
+            -- Entity already exists, update it
+            existingEntity:SetAngles(angles)
+            structuresCreated = structuresCreated + 1
+            self:NotifyGeneric(nil, "Updated existing %s at location: %.2f, %.2f, %.2f",
+                true, structData.className, location.x, location.y, location.z)
+        else
+            -- Try to create a new entity at the exact location
+            local entity = CreateEntity(structData.className, Vector(location.x, location.y, location.z), structData.teamNumber)
+
+            if entity then
+                entity:SetAngles(angles)
+                -- If it has construct mixin, complete construction
+                if HasMixin(entity, "Construct") then
+                    entity:SetConstructionComplete()
+                end
+                structuresCreated = structuresCreated + 1
+                self:NotifyGeneric(nil, "Created %s at location: %.2f, %.2f, %.2f",
+                    true, structData.className, location.x, location.y, location.z)
+            else
+                structuresFailed = structuresFailed + 1
+                self:NotifyGeneric(nil, "Failed to create %s at location: %.2f, %.2f, %.2f",
+                    true, structData.className, location.x, location.y, location.z)
+
+                -- Print additional diagnostic info
+                Shared.Message(string.format("Creation failure diagnostic info:"))
+                Shared.Message(string.format(" - Class: %s", structData.className))
+                Shared.Message(string.format(" - Team: %s", structData.teamNumber))
+                Shared.Message(string.format(" - Raw location: %s", tostring(location)))
+            end
+        end
+
+        -- Pause briefly every few entities to avoid overwhelming the server
+        if i % 5 == 0 then
+            Shared.Message("Created/updated " .. i .. " structures so far...")
+        end
+    end
+
+    -- Report results
+    self:NotifyGeneric(nil, "Layout loaded: %d/%d power points, %d/%d structures created/updated",
+        true, powerPointsCreated, powerPointsCreated + powerPointsFailed,
+        structuresCreated, structuresCreated + structuresFailed)
+end
+
+local LoadLayoutCommand = self:BindCommand("sh_loadlayout", "loadlayout", LoadLayout)
+LoadLayoutCommand:Help("Loads the saved structure layout for the current map")
+LoadLayoutCommand:AddParam{ Type = "number", Optional = true }
+
+
+
+------------------------------------------------------------
+
+
+
+
 
 
 ------------------------------------------------------

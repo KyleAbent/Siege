@@ -713,6 +713,24 @@ function LiveMixin:Kill(attacker, doer, point, direction)
 
     -- Do this first to make sure death message is sent
     if self:GetIsAlive() and self:GetCanDie() then
+        if self:isa("Alien") then
+            if GetHasRebirthUpgrade(self) and self:GetEligableForRebirth() then
+                if Server then
+                    if attacker and attacker:isa("Player")  then
+                        local points = self:GetPointValue()
+                        attacker:AddScore(points)
+                    end
+                end
+                self:TriggerRebirth()--Todo -- if not xenocideleap? lol o_O
+                return
+            end
+
+             if doer and doer:isa("XenocideLeap") and Server then --and GetHasTech(doer, kTechId.SkulkXenoRupture) and Server then
+                CreateEntity(Rupture.kMapName, point, 2)
+             end
+
+        end
+
 
         if self.PreOnKill then
             self:PreOnKill(attacker, doer, point, direction)

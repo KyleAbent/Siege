@@ -43,6 +43,14 @@ end
 
 function InfestationMixin:CreateInfestation()
 
+
+    if GetIsInSiege(self) then
+        -- If in siege room, create an empty infestation list, but mark it as generated
+        self.infestationPatches = {}
+        self.infestationGenerated = true
+        return
+    end
+
     self.infestationPatches = {}
     local coords = self:GetCoords()
     local attached = self:GetAttached()

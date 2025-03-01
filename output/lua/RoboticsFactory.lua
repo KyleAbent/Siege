@@ -194,7 +194,7 @@ end
 
 function RoboticsFactory:GetTechButtons(techId)
 
-    local techButtons = {  kTechId.ARC, kTechId.MAC, kTechId.None, kTechId.None, 
+    local techButtons = {  kTechId.MAC, kTechId.None, kTechId.None, kTechId.None,
                kTechId.None, kTechId.None, kTechId.None, kTechId.None }
                
     if self:GetTechId() ~= kTechId.ARCRoboticsFactory then

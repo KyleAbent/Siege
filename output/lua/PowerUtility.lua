@@ -49,13 +49,28 @@ if Server then
         
         local newPowerSource = nil
         for _, powerSource in ipairs(powerSources) do
-
-            if powerSource:GetCanPower(powerConsumer) then
-            -- stop search since we need only 1 source at any given moment
+            -- Skip batteries in this loop - we'll handle them separately
+            if not powerSource:isa("BackupBattery") and powerSource:GetCanPower(powerConsumer) and powerSource:GetIsBuilt() and powerSource:GetIsPowering() then
                 newPowerSource = powerSource
+--                 Print("Found new power source: %s", powerSource:GetClassName())
                 break
             end
+        end
 
+        -- Only check for batteries if we didn't find a regular power source
+        if not newPowerSource or not newPowerSource:GetIsPowering() then
+            local teamNumber = powerConsumer.GetTeamNumber and powerConsumer:GetTeamNumber() or kTeamReadyRoom
+            local batteriesInRange = GetEntitiesForTeamWithinRange("BackupBattery",
+                                      teamNumber,
+                                      powerConsumer:GetOrigin(),
+                                      BackupBattery.kRange)
+            for _, battery in ipairs(batteriesInRange) do
+                if battery:GetIsBuilt() and battery:GetIsPowering() and battery:GetCanPower(powerConsumer) then
+                    newPowerSource = battery
+--                     Print("Found new power source: %s", battery:GetClassName())
+                    break
+                end
+            end
         end
 
         return newPowerSource

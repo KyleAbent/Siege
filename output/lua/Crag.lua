@@ -52,6 +52,7 @@ Script.Load("lua/BiomassMixin.lua")
 Script.Load("lua/OrdersMixin.lua")
 Script.Load("lua/IdleMixin.lua")
 Script.Load("lua/ConsumeMixin.lua")
+Script.Load("lua/OwnerMixin.lua")
 
 class 'Crag' (ScriptActor)
 
@@ -79,13 +80,22 @@ Crag.kHealWaveMultiplier = 1.3
 
 Crag.kMaxSpeed = 2.9
 
+
+Crag.kStackRadius = 6        -- How close crags need to be to stack
+Crag.kMaxStacks = 3         -- Maximum number of stacks
+Crag.kStackMultiplier = 0.5 -- Each stack adds 25% more healing
+
+
 local networkVars =
 {
     -- For client animations
     healingActive = "boolean",
     healWaveActive = "boolean",
-    
-    moving = "boolean"
+
+    moving = "boolean",
+
+    stackLevel = "integer (0 to 3)",  -- Track up to 3 stacks like NS1
+    nearbyCrags = "integer (0 to 3)"  -- Number of crags contributing to stack
 }
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
@@ -117,7 +127,7 @@ AddMixinNetworkVars(ConsumeMixin, networkVars)
 function Crag:OnCreate()
 
     ScriptActor.OnCreate(self)
-    
+
     InitMixin(self, BaseModelMixin)
     InitMixin(self, ClientModelMixin)
     InitMixin(self, LiveMixin)
@@ -137,7 +147,7 @@ function Crag:OnCreate()
     InitMixin(self, RagdollMixin)
     InitMixin(self, ObstacleMixin)
     InitMixin(self, CatalystMixin)
-    InitMixin(self, TeleportMixin)    
+    InitMixin(self, TeleportMixin)
     InitMixin(self, UmbraMixin)
     InitMixin(self, DissolveMixin)
     InitMixin(self, MaturityMixin)
@@ -146,57 +156,58 @@ function Crag:OnCreate()
     InitMixin(self, BiomassMixin)
     InitMixin(self, OrdersMixin, { kMoveOrderCompleteDistance = kAIMoveOrderCompleteDistance })
     InitMixin(self, ConsumeMixin)
-    
+
     self.healingActive = false
     self.healWaveActive = false
-    
+
     self:SetUpdates(true, Crag.kThinkInterval)
-    
+
     InitMixin(self, FireMixin)
-    
+
     if Server then
         InitMixin(self, InfestationTrackerMixin)
         self.timeOfLastHeal = 0
         self.timeOfLastHealWave = 0
-    elseif Client then    
-        InitMixin(self, CommanderGlowMixin)    
+        InitMixin(self, OwnerMixin)
+    elseif Client then
+        InitMixin(self, CommanderGlowMixin)
     end
-    
+
     self:SetLagCompensated(false)
     self:SetPhysicsType(PhysicsType.Kinematic)
     self:SetPhysicsGroup(PhysicsGroup.MediumStructuresGroup)
-    
+
 end
 
 function Crag:OnInitialized()
 
     ScriptActor.OnInitialized(self)
-    
+
     self:SetModel(Crag.kModelName, Crag.kAnimationGraph)
-    
+
     if Server then
-    
+
         InitMixin(self, StaticTargetMixin)
         InitMixin(self, SleeperMixin)
         InitMixin(self, RepositioningMixin)
         InitMixin(self, SupplyUserMixin)
-        
+
         -- TODO: USE TRIGGERS, see shade
 
         -- This Mixin must be inited inside this OnInitialized() function.
         if not HasMixin(self, "MapBlip") then
             InitMixin(self, MapBlipMixin)
         end
-        
+
     elseif Client then
-    
+
         InitMixin(self, UnitStatusMixin)
         InitMixin(self, HiveVisionMixin)
-        
+
     end
-    
+
     InitMixin(self, IdleMixin)
-    
+
 end
 
 function Crag:PreventTurning()
@@ -225,7 +236,7 @@ end
 
 function Crag:GetMatureMaxArmor()
     return kMatureCragArmor
-end    
+end
 
 function Crag:GetDamagedAlertId()
     return kTechId.AlienAlertStructureUnderAttack
@@ -279,34 +290,51 @@ local kTechIdToLifeformHeal =
     [kTechId.Onos] = 80,
 }
 
-function Crag:TryHeal(target)
 
+function Crag:UpdateStacks()
+    -- Find nearby crags
+    local nearbyCrags = 0
+    local entities = GetEntitiesWithinRange("Crag", self:GetOrigin(), Crag.kStackRadius)
+
+    for _, entity in ipairs(entities) do
+        if entity ~= self and entity:GetIsAlive() and entity:GetIsBuilt() and not entity:GetIsOnFire() then
+            nearbyCrags = nearbyCrags + 1
+        end
+    end
+
+    -- Update stack level (clamp to max stacks)
+    self.nearbyCrags = math.min(nearbyCrags, Crag.kMaxStacks)
+    self.stackLevel = self.nearbyCrags
+end
+
+
+function Crag:TryHeal(target)
     local unclampedHeal = target:GetMaxHealth() * Crag.kHealPercentage
     local heal = Clamp(unclampedHeal, Crag.kMinHeal, Crag.kMaxHeal)
-    
+
     if target.GetTechId then
         heal = kTechIdToLifeformHeal[target:GetTechId()] or heal
     end
 
+    -- Apply stack multiplier
+    local stackBonus = 1 + (self.stackLevel * Crag.kStackMultiplier)
+    heal = heal * stackBonus
+
     if self.healWaveActive then
         heal = heal * Crag.kHealWaveMultiplier
     end
-    
-    if target:GetHealthScalar() ~= 1 and (not target.timeLastCragHeal or target.timeLastCragHeal + Crag.kHealInterval <= Shared.GetTime()) then
-    
 
+    if target:GetHealthScalar() ~= 1 and (not target.timeLastCragHeal or target.timeLastCragHeal + Crag.kHealInterval <= Shared.GetTime()) then
         local amountHealed = target:AddHealth(heal, false, false, false, self, true)
         target.timeLastCragHeal = Shared.GetTime()
         return amountHealed
-        
     else
         return 0
     end
-    
 end
 
-function Crag:UpdateHealing()    
-    if not self:GetIsOnFire() and ( self.timeOfLastHeal == 0 or (Shared.GetTime() > self.timeOfLastHeal + Crag.kHealInterval) ) then    
+function Crag:UpdateHealing()
+    if not self:GetIsOnFire() and ( self.timeOfLastHeal == 0 or (Shared.GetTime() > self.timeOfLastHeal + Crag.kHealInterval) ) then
         self:PerformHealing()
     end
 end
@@ -338,57 +366,94 @@ function Crag:OnOrderComplete()
     self:SetUpdateRate(Crag.kThinkInterval)
 end
 
+function Crag:OnOverrideOrder(order)
+    if order:GetType() == kTechId.Default then
+        -- Check if we're on infestation and not currently teleporting
+        if GetIsPointOnInfestation(self:GetOrigin()) and not self:GetIsTeleporting() and
+           not self:GetIsOnFire() and self:GetIsBuilt() and self:GetCanTeleport() and GetHasTech(self, kTechId.ShiftHive) then
+
+            -- Check cooldown
+            local now = Shared.GetTime()
+            if not self.lastSelfTeleportTime or (now - self.lastSelfTeleportTime > kSelfTeleportDelay)  then
+
+                -- Get target position and validate it
+                local destination = order:GetLocation()
+                if GetIsPointOnInfestation(destination) then
+                    -- Trigger teleport
+                    self:TriggerSelfTeleport(destination)
+                    self.lastSelfTeleportTime = now
+                    return true
+                end
+            end
+        end
+
+        return false  -- Don't allow default move behavior
+    end
+end
+
+function Crag:GetUnitNameOverride(viewer)
+
+    --Unbuilt?
+    if GetAreEnemies(self, viewer) then
+        return GetDisplayNameForTechId(kTechId.Crag)
+    end
+
+    -- Show stack level to friendlies
+    local baseName = GetDisplayName(self)
+    if self.stackLevel > 0 then
+        return string.format("%s (Stack Level %d)", baseName, self.stackLevel)
+    end
+
+    return baseName
+end
+
 -- Look for nearby friendlies to heal
 function Crag:OnUpdate(deltaTime)
-    
     PROFILE("Crag:OnUpdate")
 
     ScriptActor.OnUpdate(self, deltaTime)
-    
+
     UpdateAlienStructureMove(self, deltaTime)
-    
+
     local time = Shared.GetTime()
 
     if Server then
+        -- Update stacks every think interval
+        self:UpdateStacks()
 
         if GetIsUnitActive(self) then
             self:UpdateHealing()
             self.healingActive = time < self.timeOfLastHeal + Crag.kHealInterval and self.timeOfLastHeal > 0
             self.healWaveActive = time < self.timeOfLastHealWave + Crag.kHealWaveDuration and self.timeOfLastHealWave > 0
         end
-
     elseif Client then
+        -- Add visual effects for stacks
+--         if self.stackLevel > 0 then
+--             self:TriggerEffects("crag_stack_level_" .. self.stackLevel)
+--         end
 
         if self.healWaveActive or self.healingActive then
-        
             if not self.lastHealEffect or self.lastHealEffect + Crag.kHealEffectInterval < time then
-            
                 local localPlayer = Client.GetLocalPlayer()
                 local showHeal = not HasMixin(self, "Cloakable") or not self:GetIsCloaked() or not GetAreEnemies(self, localPlayer)
-        
+
                 if showHeal then
-                
                     if self.healWaveActive then
                         self:TriggerEffects("crag_heal_wave")
                     elseif self.healingActive then
                         self:TriggerEffects("crag_heal")
                     end
-                    
                 end
-                
+
                 self.lastHealEffect = time
-            
             end
-            
         end
-    
     end
-    
 end
 
 function Crag:GetTechButtons(techId)
 
-    local techButtons = { kTechId.HealWave, kTechId.Move, kTechId.CragHeal, kTechId.None,
+    local techButtons = { kTechId.SelfTeleport, kTechId.HealWave, kTechId.CragHeal, kTechId.None,
                           kTechId.None, kTechId.None, kTechId.None, kTechId.Consume }
     
     if self.moving then

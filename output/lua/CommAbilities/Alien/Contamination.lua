@@ -53,32 +53,32 @@ local function SineFalloff( distanceFraction )
     return math.cos(piFraction + math.pi) + 1 
 end
 
-function Contamination:SpewBile()
-
-    if not self:GetIsAlive() or kContaminationBileSpewCount < 1 then
-        return false
-    end
-
-    self.bileEmitCount = self.bileEmitCount + 1
-
-    if not self:GetIsOnFire() then
-        local dotMarker = CreateEntity( DotMarker.kMapName, self:GetOrigin(), self:GetTeamNumber() )
-        dotMarker:SetDamageType( kBileBombDamageType )
-        dotMarker:SetLifeTime( kBileBombDuration )
-        dotMarker:SetDamage( kBileBombDamage )
-        dotMarker:SetRadius( kBileBombSplashRadius )
-        dotMarker:SetDamageIntervall( kBileBombDotInterval )
-        dotMarker:SetDotMarkerType( DotMarker.kType.Static )
-        dotMarker:SetTargetEffectName( "bilebomb_onstructure" )
-        dotMarker:SetDeathIconIndex( kDeathMessageIcon.BileBomb )
-        dotMarker:SetOwner( self:GetOwner() )
-        dotMarker:SetFallOffFunc( SineFalloff )
-        dotMarker:TriggerEffects( "bilebomb_hit" )
-    end
-
-    return self.bileEmitCount < kContaminationBileSpewCount
-
-end
+-- function Contamination:SpewBile()
+--
+--     if not self:GetIsAlive() or kContaminationBileSpewCount < 1 then
+--         return false
+--     end
+--
+--     self.bileEmitCount = self.bileEmitCount + 1
+--
+--     if not self:GetIsOnFire() then
+--         local dotMarker = CreateEntity( DotMarker.kMapName, self:GetOrigin(), self:GetTeamNumber() )
+--         dotMarker:SetDamageType( kBileBombDamageType )
+--         dotMarker:SetLifeTime( kBileBombDuration )
+--         dotMarker:SetDamage( kBileBombDamage )
+--         dotMarker:SetRadius( kBileBombSplashRadius )
+--         dotMarker:SetDamageIntervall( kBileBombDotInterval )
+--         dotMarker:SetDotMarkerType( DotMarker.kType.Static )
+--         dotMarker:SetTargetEffectName( "bilebomb_onstructure" )
+--         dotMarker:SetDeathIconIndex( kDeathMessageIcon.BileBomb )
+--         dotMarker:SetOwner( self:GetOwner() )
+--         dotMarker:SetFallOffFunc( SineFalloff )
+--         dotMarker:TriggerEffects( "bilebomb_hit" )
+--     end
+--
+--     return self.bileEmitCount < kContaminationBileSpewCount
+--
+-- end
 
 
 function Contamination:OnCreate()
@@ -95,7 +95,7 @@ function Contamination:OnCreate()
     InitMixin(self, GameEffectsMixin)
     InitMixin(self, FireMixin)
     
-    self.bileEmitCount = 0
+--     self.bileEmitCount = 0
     
     self:SetLagCompensated(false)
     self:SetPhysicsType(PhysicsType.Kinematic)
@@ -120,7 +120,7 @@ function Contamination:OnInitialized()
         self:SetCoords( coords )
         
         self:AddTimedCallback( self.TimeUp, kContaminationLifeSpan )
-        self:AddTimedCallback( self.SpewBile, kContaminationBileInterval )
+        --self:AddTimedCallback( self.SpewBile, kContaminationBileInterval )
         
     elseif Client then
     

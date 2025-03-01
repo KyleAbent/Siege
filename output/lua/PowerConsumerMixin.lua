@@ -44,14 +44,16 @@ end
 
 if Server then
 
-    function PowerConsumerMixin:OnLocationChange(locationName)
-    
-        self.powerSourceId = Entity.invalidId
-        if self:GetRequiresPower() then
-            SocketPowerForLocation(locationName)
-        end
-        
-    end
+        --Why do this every time structure is dropped?
+            --todo better logic lol
+--     function PowerConsumerMixin:OnLocationChange(locationName)
+--
+--         self.powerSourceId = Entity.invalidId
+--         if self:GetRequiresPower() then
+--             SocketPowerForLocation(locationName)
+--         end
+--
+--     end
     
 end
 
@@ -227,7 +229,13 @@ if Server then
             --powerSurge is handled in OnUpdate safe to ignore expiration of effect here
                 self:OnPowerOff()
             end
-            
+            self.powerSourceId = Entity.invalidId
+
+            -- Add a slight delay before searching for a new power source
+            -- to ensure all state changes have propagated
+            self:AddTimedCallback(function()
+                CheckForPowerSource(self)
+            end, 0.5)
         end
         
     end

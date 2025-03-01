@@ -135,7 +135,7 @@ function ScoringMixin:GetScore()
     return self.score
 end
 
-function ScoringMixin:AddScore(points, res, wasKill)
+function ScoringMixin:AddScore(points, res, wasKill) --todo global 30% buff for aliens altogether?
 
     -- Should only be called on the Server.
     if Server then

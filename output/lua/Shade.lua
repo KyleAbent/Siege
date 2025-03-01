@@ -61,6 +61,7 @@ Script.Load("lua/BiomassMixin.lua")
 Script.Load("lua/OrdersMixin.lua")
 Script.Load("lua/IdleMixin.lua")
 Script.Load("lua/ConsumeMixin.lua")
+Script.Load("lua/OwnerMixin.lua")
 
 class 'Shade' (ScriptActor)
 
@@ -145,6 +146,7 @@ function Shade:OnCreate()
     
         --InitMixin(self, TriggerMixin, {kPhysicsGroup = PhysicsGroup.TriggerGroup, kFilterMask = PhysicsMask.AllButTriggers} )
         InitMixin(self, InfestationTrackerMixin)
+        InitMixin(self, OwnerMixin)
     elseif Client then
         InitMixin(self, CommanderGlowMixin)            
     end
@@ -207,6 +209,8 @@ function Shade:GetMatureMaxArmor()
     return kMatureShadeArmor
 end   
 
+
+
 function Shade:GetDamagedAlertId()
     return kTechId.AlienAlertStructureUnderAttack
 end
@@ -217,7 +221,7 @@ end
 
 function Shade:GetTechButtons(techId)
 
-    local techButtons = { kTechId.ShadeInk, kTechId.Move, kTechId.ShadeCloak, kTechId.None, 
+    local techButtons = { kTechId.ShadeInk, kTechId.SelfTeleport, kTechId.ShadeCloak, kTechId.None,
                           kTechId.None, kTechId.None, kTechId.None, kTechId.Consume }
                           
     if self.moving then
@@ -289,6 +293,31 @@ function Shade:OnUpdateAnimationInput(modelMixin)
     
 end
 
+function Shade:OnOverrideOrder(order)
+    if order:GetType() == kTechId.Default then
+        -- Check if we're on infestation and not currently teleporting
+        if GetIsPointOnInfestation(self:GetOrigin()) and not self:GetIsTeleporting() and
+           not self:GetIsOnFire() and self:GetIsBuilt() and self:GetCanTeleport() and GetHasTech(self, kTechId.ShiftHive) then
+
+            -- Check cooldown
+            local now = Shared.GetTime()
+            if not self.lastSelfTeleportTime or (now - self.lastSelfTeleportTime > kSelfTeleportDelay)  then
+
+                -- Get target position and validate it
+                local destination = order:GetLocation()
+                if GetIsPointOnInfestation(destination) then
+                    -- Trigger teleport
+                    self:TriggerSelfTeleport(destination)
+                    self.lastSelfTeleportTime = now
+                    return true
+                end
+            end
+        end
+
+        return false  -- Don't allow default move behavior
+    end
+end
+
 function Shade:GetMaxSpeed()
     return kAlienStructureMoveSpeed
 end
@@ -324,6 +353,7 @@ end
 function Shade:GetCanBeUsed(player, useSuccessTable)
     useSuccessTable.useSuccess = false    
 end
+
 
 function Shade:OnOrderChanged()
     --This will cancel Consume if it is running.

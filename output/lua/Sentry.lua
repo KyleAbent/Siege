@@ -42,6 +42,7 @@ Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
 Script.Load("lua/InfestationTrackerMixin.lua")
 Script.Load("lua/SupplyUserMixin.lua")
+Script.Load("lua/PowerConsumerMixin.lua")
 
 local kSpinUpSoundName = PrecacheAsset("sound/NS2.fev/marine/structures/sentry_spin_up")
 local kSpinDownSoundName = PrecacheAsset("sound/NS2.fev/marine/structures/sentry_spin_down")
@@ -106,8 +107,6 @@ local networkVars =
     deployed = "boolean",
     
     attacking = "boolean",
-    
-    attachedToBattery = "boolean"
 }
 
 AddMixinNetworkVars(BaseModelMixin, networkVars)
@@ -131,6 +130,7 @@ AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(GhostStructureMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
 AddMixinNetworkVars(ParasiteMixin, networkVars)
+AddMixinNetworkVars(PowerConsumerMixin, networkVars)
 
 function Sentry:OnCreate()
 
@@ -159,7 +159,8 @@ function Sentry:OnCreate()
     InitMixin(self, OrdersMixin, { kMoveOrderCompleteDistance = kAIMoveOrderCompleteDistance })
     InitMixin(self, DissolveMixin)
     InitMixin(self, GhostStructureMixin)
-    InitMixin(self, ParasiteMixin)    
+    InitMixin(self, ParasiteMixin)
+    InitMixin(self, PowerConsumerMixin)
     
     if Client then
         InitMixin(self, CommanderGlowMixin)
@@ -171,7 +172,6 @@ function Sentry:OnCreate()
     self.barrelPitchDegrees = 0
 
     self.confused = false
-    self.attachedToBattery = false
     
     if Server then
 
@@ -187,7 +187,7 @@ function Sentry:OnCreate()
         local function PlayScanPing(sentry)
         
             local interval = sentry.kTargetScanDelay + sentry.kPingInterval
-            if GetIsUnitActive(sentry) and not sentry.attacking and sentry.attachedToBattery and (sentry.timeLastAttackEffect + interval < Shared.GetTime())  then
+            if GetIsUnitActive(sentry) and not sentry.attacking and sentry.powered and (sentry.timeLastAttackEffect + interval < Shared.GetTime())  then
                 local player = Client.GetLocalPlayer()
                 Shared.PlayPrivateSound(player, kSentryScanSoundName, nil, 1, sentry:GetModelOrigin())
             end
@@ -253,6 +253,10 @@ function Sentry:OnInitialized()
     
 end
 
+function Sentry:GetRequiresPower()
+    return true
+end
+
 function Sentry:OnDestroy()
 
     ScriptActor.OnDestroy(self)
@@ -312,7 +316,7 @@ function Sentry:GetPlayInstantRagdoll()
 end
 
 function Sentry:GetIsLaserActive()
-    return GetIsUnitActive(self) and self.deployed and self.attachedToBattery
+    return GetIsUnitActive(self) and self.deployed and self.powered
 end
 
 function Sentry:OnUpdatePoseParameters()
@@ -339,7 +343,7 @@ function Sentry:OnUpdateAnimationInput(modelMixin)
 
     PROFILE("Sentry:OnUpdateAnimationInput")    
     modelMixin:SetAnimationInput("attack", self.attacking)
-    modelMixin:SetAnimationInput("powered", self.attachedToBattery)
+    modelMixin:SetAnimationInput("powered", self.powered)
     
 end
 
@@ -499,40 +503,12 @@ if Server then
 
     end
     
-    local function UpdateBatteryState(self)
-    
-        local time = Shared.GetTime()
-        
-        if self.lastBatteryCheckTime == nil or (time > self.lastBatteryCheckTime + 0.5) then
-        
-            -- Update if we're powered or not
-            self.attachedToBattery = false
-            
-            local ents = GetEntitiesForTeamWithinRange("SentryBattery", self:GetTeamNumber(), self:GetOrigin(), SentryBattery.kRange)
-            for index, ent in ipairs(ents) do
-            
-                if GetIsUnitActive(ent) and ent:GetLocationName() == self:GetLocationName() then
-                
-                    self.attachedToBattery = true
-                    break
-                    
-                end
-                
-            end
-            
-            self.lastBatteryCheckTime = time
-            
-        end
-        
-    end
-    
     function Sentry:OnUpdate(deltaTime)
     
         PROFILE("Sentry:OnUpdate")
         
         ScriptActor.OnUpdate(self, deltaTime)  
         
-        UpdateBatteryState(self)
         
         if self.timeNextAttack == nil or (Shared.GetTime() > self.timeNextAttack) then
         
@@ -545,7 +521,7 @@ if Server then
             
             self.target = nil
             
-            if GetIsUnitActive(self) and self.attachedToBattery and self.deployed then
+            if GetIsUnitActive(self) and self.powered and self.deployed then
                 self.target = self.targetSelector:AcquireTarget()
             end
             
@@ -595,7 +571,7 @@ if Server then
 
             end
             
-            if not GetIsUnitActive() or self.confused or not self.attacking or not self.attachedToBattery then
+            if not GetIsUnitActive() or self.confused or not self.attacking or not self.powered then
             
                 if self.attackSound:GetIsPlaying() then
                     self.attackSound:Stop()
@@ -638,7 +614,7 @@ elseif Client then
     
         ScriptActor.OnUpdate(self, deltaTime)
         
-        if GetIsUnitActive(self) and self.deployed and self.attachedToBattery then
+        if GetIsUnitActive(self) and self.deployed and self.powered then
       
             local swingMult = 1.0
 
@@ -681,21 +657,9 @@ elseif Client then
 
 end
 
+
 function GetCheckSentryLimit(techId, origin, normal, commander)
 
-    -- Prevent the case where a Sentry in one room is being placed next to a
-    -- SentryBattery in another room.
-    local battery = GetSentryBatteryInRoom(origin)
-    if battery then
-    
-        if (battery:GetOrigin() - origin):GetLength() > SentryBattery.kRange then
-            return false
-        end
-        
-    else
-        return false
-    end
-    
     local location = GetLocationForPoint(origin)
     local locationName = location and location:GetName() or nil
     local numInRoom = 0
@@ -720,17 +684,7 @@ function GetCheckSentryLimit(techId, origin, normal, commander)
 end
 
 function GetBatteryInRange(commander)
-
-    local entities = { }
-    local ranges = { }
-
-    for _, battery in ipairs(GetEntitiesForTeam("SentryBattery", commander:GetTeamNumber())) do
-        ranges[battery] = SentryBattery.kRange
-        table.insert(entities, battery)
-    end
-    
-    return entities, ranges
-    
+    return self.powered
 end
 
 Shared.LinkClassToMap("Sentry", Sentry.kMapName, networkVars)

@@ -315,27 +315,27 @@ end
 
 local function IsBeingGrown(self, target)
 
-    if target.hasDrifterEnzyme then
-        return true
-    end
-
-    for _, drifter in ipairs(GetEntitiesForTeam("Drifter", target:GetTeamNumber())) do
-
-        if self ~= drifter then
-
-            local order = drifter:GetCurrentOrder()
-            if order and order:GetType() == kTechId.Grow then
-
-                local growTarget = Shared.GetEntity(order:GetParam())
-                if growTarget == target then
-                    return true
-                end
-
-            end
-
-        end
-
-    end
+--     if target.hasDrifterEnzyme then
+--         return true
+--     end
+--
+--     for _, drifter in ipairs(GetEntitiesForTeam("Drifter", target:GetTeamNumber())) do
+--
+--         if self ~= drifter then
+--
+--             local order = drifter:GetCurrentOrder()
+--             if order and order:GetType() == kTechId.Grow then
+--
+--                 local growTarget = Shared.GetEntity(order:GetParam())
+--                 if growTarget == target then
+--                     return true
+--                 end
+--
+--             end
+--
+--         end
+--
+--     end
 
     return false
 

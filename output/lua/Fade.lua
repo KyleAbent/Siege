@@ -33,6 +33,8 @@ Script.Load("lua/RailgunTargetMixin.lua")
 Script.Load("lua/IdleMixin.lua")
 Script.Load("lua/FadeVariantMixin.lua")
 Script.Load("lua/FilteredCinematicMixin.lua")
+Script.Load("lua/Weapons/PredictedProjectile.lua")
+Script.Load("lua/Weapons/Alien/AcidRocket.lua")
 
 class 'Fade' (Alien)
 
@@ -145,6 +147,7 @@ function Fade:OnCreate()
     InitMixin(self, TunnelUserMixin)
     InitMixin(self, BabblerClingMixin)
     InitMixin(self, FadeVariantMixin)
+    InitMixin(self, PredictedProjectileShooterMixin)
 
     if Client then
         InitMixin(self, RailgunTargetMixin)

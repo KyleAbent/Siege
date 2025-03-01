@@ -846,7 +846,8 @@ local kGorgeBuildStructureMessage =
     direction = "vector",
     structureIndex = "integer (1 to 5)",
     lastClickedPosition = "vector",
-    lastClickedPositionNormal = "vector"
+    lastClickedPositionNormal = "vector",
+    isAdvanced = "boolean"
 }
 
 function BuildGorgeDropStructureMessage(origin, direction, structureIndex, lastClickedPosition, lastClickedPositionNormal)
@@ -858,7 +859,7 @@ function BuildGorgeDropStructureMessage(origin, direction, structureIndex, lastC
     t.structureIndex = structureIndex
     t.lastClickedPosition = lastClickedPosition or Vector(0,0,0)
     t.lastClickedPositionNormal = lastClickedPositionNormal or Vector(0,0,0)
-
+    t.isAdvanced = false
     return t
 
 end
@@ -1337,3 +1338,31 @@ if Shared.GetThunderdomeEnabled() then
 end
 
 Shared.RegisterNetworkMessage("RoundStatsProcessingCompleted", {})
+
+
+--Siege
+local kGorgeAdvancedBuildMessage =
+{
+    origin = "vector",
+    direction = "vector",
+    structureIndex = "integer (1 to 5)",
+    lastClickedPosition = "vector",
+    lastClickedPositionNormal = "vector"
+}
+
+function BuildGorgeAdvancedStructureMessage(origin, direction, structureIndex, lastClickedPosition, lastClickedPositionNormal)
+    local t = {}
+    t.origin = origin
+    t.direction = direction
+    t.structureIndex = structureIndex
+    t.lastClickedPosition = lastClickedPosition or Vector(0,0,0)
+    t.lastClickedPositionNormal = lastClickedPositionNormal or Vector(0,0,0)
+    t.isAdvanced = true
+    return t
+end
+
+function ParseGorgeAdvancedBuildMessage(t)
+    return t.origin, t.direction, t.structureIndex, t.lastClickedPosition, t.lastClickedPositionNormal
+end
+
+Shared.RegisterNetworkMessage("GorgeBuildAdvancedStructure", kGorgeAdvancedBuildMessage)

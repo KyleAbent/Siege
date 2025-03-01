@@ -16,6 +16,7 @@ Script.Load("lua/TargetMixin.lua")
 Script.Load("lua/UsableMixin.lua")
 Script.Load("lua/Mixins/SimplePhysicsMixin.lua")
 Script.Load("lua/BiomassHealthMixin.lua")
+Script.Load("lua/InfestationMixin.lua")
 
 class 'Clog' (Entity)
 
@@ -54,6 +55,7 @@ AddMixinNetworkVars(TeamMixin, networkVars)
 AddMixinNetworkVars(LiveMixin, networkVars)
 AddMixinNetworkVars(GameEffectsMixin, networkVars)
 AddMixinNetworkVars(FireMixin, networkVars)
+AddMixinNetworkVars(InfestationMixin, networkVars)
 
 function Clog:OnCreate()
 
@@ -107,7 +109,35 @@ function Clog:OnInitialized()
         self:SetExcludeRelevancyMask(mask)
         
     end
+    InitMixin(self, InfestationMixin)
     
+end
+
+
+function Clog:GetInfestationRadius()
+    local frontdoor = GetEntitiesWithinRange("FrontDoor", self:GetOrigin(), 7)
+    if #frontdoor >=1 or GetIsInSiege(self) then
+        return 0
+    else
+        return 3.5
+    end
+end
+
+function Clog:GetInfestationGrowthRate()
+    return 0.5
+end
+
+function Clog:GetAttached()
+    return false
+end
+
+function Clog:PreOnKill(attacker, doer, point, direction)
+    self:SetDesiredInfestationRadius(0)
+
+    for _, structure in ipairs(GetEntitiesWithMixinForTeamWithinRange("InfestationTracker", 1, self:GetOrigin(), 8)) do
+        structure:AddTimedCallback(function() structure:SetGameEffectMask(kGameEffect.OnInfestation, false) end, 1)
+    end
+
 end
 
 function Clog:GetSimplePhysicsBodyType()

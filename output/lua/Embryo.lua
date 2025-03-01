@@ -126,18 +126,31 @@ local function UpdateGestation(self)
     if self:GetIsAlive() and self.gestationClass ~= nil then
 
         if not self.gestateEffectsTriggered then
-
             self:TriggerEffects("player_start_gestate")
             self.gestateEffectsTriggered = true
-
         end
 
-        -- Take into account catalyst effects
-        local amount = GetAlienCatalystTimeAmount(kUpdateGestationTime, self) + kUpdateGestationTime
+        -- Get game info to check progress toward siege
+        local gameInfo = GetGameInfoEntity()
+        local gameStartTime = gameInfo:GetStartTime()
+        local siegeTime = gameInfo:GetSiegeTime()
+        local currentTime = Shared.GetTime() - gameStartTime
+
+        -- Calculate progress toward siege time (clamped between 0 and 1)
+        local siegeProgress = math.min(1, math.max(0, currentTime / siegeTime))
+
+        -- Check if this embryo has rebirth triggered - no boost for rebirth players
+        local siegeBoostMultiplier = 1.0
+        if not self.triggeredrebirth then
+            -- Calculate gestation boost based on siege progress (up to 80% faster)
+            siegeBoostMultiplier = 1 + (siegeProgress * 0.8)
+        end
+
+        -- Take into account catalyst effects and apply siege boost
+        local amount = (GetAlienCatalystTimeAmount(kUpdateGestationTime, self) + kUpdateGestationTime) * siegeBoostMultiplier
         amount = self:GetGestationSoftCappedAmount(amount)
 
         self.evolveTime = self.evolveTime + amount
-
         self.evolvePercentage = Clamp((self.evolveTime / self.gestationTime) * 100, 0, 100)
 
         if self.evolveTime >= self.gestationTime then
@@ -165,33 +178,23 @@ local function UpdateGestation(self)
                 newPlayer:SetOrigin(self.validSpawnPoint)
             else
                 for index = 1, 100 do
-
                     local spawnPoint = GetRandomSpawnForCapsule(newAlienExtents.y, capsuleRadius, self:GetModelOrigin(), 0.5, 5, EntityFilterOne(self))
-
                     if spawnPoint then
-
                         newPlayer:SetOrigin(spawnPoint)
                         break
-
                     end
-
                 end
-
             end
 
             newPlayer:DropToFloor()
-
             self:TriggerEffects("player_end_gestate")
 
             -- Now give new player all the upgrades they purchased
             local upgradesGiven = 0
-
             for index, upgradeId in ipairs(self.evolvingUpgrades) do
-
                 if newPlayer:GiveUpgrade(upgradeId) then
                     upgradesGiven = upgradesGiven + 1
                 end
-
             end
 
             -- Get the final lifeform data
@@ -211,14 +214,11 @@ local function UpdateGestation(self)
 
             -- In case we get healed so much we reach the max health or armor (need to move those extra eHP)
             if remainingEHP > 0 then
-
                 healthHealed = Clamp(lifeformHealth + remainingEHP, 0, lifeformMaxHealth) - lifeformHealth
                 remainingEHP = remainingEHP - healthHealed
 
                 armorHealed = (lifeformArmor + remainingEHP / kHealthPointsPerArmor) - lifeformArmor
                 remainingEHP = remainingEHP - armorHealed * kHealthPointsPerArmor
-
-                -- Log("%s eHP to heal, %s to armor and %s to health", remainingEHP, armorHealed, healthHealed)
             end
 
             lifeformArmor = Clamp(lifeformArmor + armorHealed, 0, lifeformMaxArmor)
@@ -231,8 +231,18 @@ local function UpdateGestation(self)
             newPlayer:SetHatched()
             newPlayer:TriggerEffects("egg_death")
 
-            if self:GetIsDroppedEmbryo() then
-                SetPlayerStartingLocation(newPlayer)
+            if GetHasRebirthUpgrade(newPlayer) then
+               if self.triggeredrebirth then
+                  newPlayer:SetHealth(newPlayer:GetHealth() * 0.7)
+                  newPlayer:SetArmor(newPlayer:GetArmor() * 0.7)
+               end
+               newPlayer:TriggerRebirthCountDown(newPlayer:GetClient():GetControllingPlayer())
+               newPlayer.lastredeemorrebirthtime = Shared.GetTime()
+            end
+
+            if GetHasRedemptionUpgrade(newPlayer) then
+               newPlayer:TriggerRedeemCountDown(newPlayer:GetClient():GetControllingPlayer())
+               newPlayer.lastredeemorrebirthtime = Shared.GetTime()
             end
 
             if self.resOnGestationComplete then
@@ -241,40 +251,31 @@ local function UpdateGestation(self)
 
             local newUpgrades = newPlayer:GetUpgrades()
             if #newUpgrades > 0 then
-                local class = newPlayer:GetClassName()
-                newPlayer.lastUpgradeList = newPlayer.lastUpgradeList or {}
-                newPlayer.lastUpgradeList[class] = newPlayer:GetUpgrades()
+                newPlayer.lastUpgradeList = newPlayer:GetUpgrades()
             end
 
-            -- Notify team
-
+            // Notify team
             local team = self:GetTeam()
-
             if team and team.OnEvolved then
-
                 team:OnEvolved(newPlayer:GetTechId())
 
                 for _, upgradeId in ipairs(self.evolvingUpgrades) do
-
                     if team.OnEvolved then
                         team:OnEvolved(upgradeId)
                     end
-
                 end
-
             end
 
-            -- Return false so that we don't get called again if the server time step
-            -- was larger than the callback interval
+            // Return false so that we don't get called again if the server time step
+            // was larger than the callback interval
             return false
-
         end
-
     end
 
     return true
-
 end
+
+
 
 function Embryo:OnInitialized()
 
@@ -520,9 +521,23 @@ function Embryo:PostUpdateMove(input, runningPrediction)
     self:SetAngles(self.originalAngles)
 end
 
+-- function Embryo:OnAdjustModelCoords(coords)
+--
+--     coords.origin = coords.origin - Embryo.kSkinOffset
+--     return coords
+--
+-- end
+
+local kUpdateGestationTime = 0.1
 function Embryo:OnAdjustModelCoords(coords)
 
     coords.origin = coords.origin - Embryo.kSkinOffset
+
+    	local scale = Clamp(self.evolvePercentage / 100, .05, 1)
+        coords.xAxis = coords.xAxis * scale
+        coords.yAxis = coords.yAxis * scale
+        coords.zAxis = coords.zAxis * scale
+
     return coords
 
 end

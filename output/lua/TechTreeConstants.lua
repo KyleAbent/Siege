@@ -224,6 +224,30 @@ kTechId = enum {
 
     'DeathTrigger',
 
+
+    --Siege
+    'AdvancedBeacon',
+    'EggBeacon',
+    'StructureBeacon',
+    'PrimalScream',
+    'BackupLight',
+    'Rebirth',
+    'Redemption',
+    'ThickenedSkin',
+    'Hunger',
+    'CragHiveTwo',
+    'ShiftHiveTwo',
+    'LerkBileBomb',
+    'SelfTeleport',
+    'AcidRocket',
+
+
+
+
+
+
+
+
     'Max' -- Unused, for legacy reasons, do NOT use!
 
 }

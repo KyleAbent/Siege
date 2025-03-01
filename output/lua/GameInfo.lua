@@ -303,6 +303,11 @@ if Client then
     end
 end
 
+function GameInfo:GetSetupConcluded()
+    local currentTime = Shared.GetTime() - self.startTime
+    return currentTime >= self.frontTimer
+end
+
 if Server then
 
     function GameInfo:SetStartTime(startTime)

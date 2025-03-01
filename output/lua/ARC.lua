@@ -34,6 +34,9 @@ Script.Load("lua/TargetCacheMixin.lua")
 Script.Load("lua/DissolveMixin.lua")
 Script.Load("lua/DamageMixin.lua")
 Script.Load("lua/CorrodeMixin.lua")
+Script.Load("lua/ConstructMixin.lua")
+Script.Load("lua/ResearchMixin.lua")
+Script.Load("lua/RecycleMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/UnitStatusMixin.lua")
 Script.Load("lua/CommanderGlowMixin.lua")
@@ -42,7 +45,7 @@ Script.Load("lua/CombatMixin.lua")
 Script.Load("lua/IdleMixin.lua")
 Script.Load("lua/WebableMixin.lua")
 Script.Load("lua/ParasiteMixin.lua")
-Script.Load("lua/RolloutMixin.lua")
+Script.Load("lua/GhostStructureMixin.lua")
 Script.Load("lua/ARCVariantMixin.lua")
 
 
@@ -116,11 +119,15 @@ AddMixinNetworkVars(OrdersMixin, networkVars)
 AddMixinNetworkVars(NanoShieldMixin, networkVars)
 AddMixinNetworkVars(DissolveMixin, networkVars)
 AddMixinNetworkVars(CorrodeMixin, networkVars)
+AddMixinNetworkVars(ConstructMixin, networkVars)
+AddMixinNetworkVars(ResearchMixin, networkVars)
+AddMixinNetworkVars(RecycleMixin, networkVars)
 AddMixinNetworkVars(LOSMixin, networkVars)
 AddMixinNetworkVars(SelectableMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(IdleMixin, networkVars)
 AddMixinNetworkVars(WebableMixin, networkVars)
+AddMixinNetworkVars(GhostStructureMixin, networkVars)
 AddMixinNetworkVars(ParasiteMixin, networkVars)
 AddMixinNetworkVars(ARCVariantMixin, networkVars)
 
@@ -146,9 +153,13 @@ function ARC:OnCreate()
     InitMixin(self, DissolveMixin)
     InitMixin(self, DamageMixin)
     InitMixin(self, CorrodeMixin)
+    InitMixin(self, ConstructMixin)
+    InitMixin(self, ResearchMixin)
+    InitMixin(self, RecycleMixin)
     InitMixin(self, EntityChangeMixin)
     InitMixin(self, LOSMixin)
     InitMixin(self, CombatMixin)
+    InitMixin(self, GhostStructureMixin)
     InitMixin(self, WebableMixin)
     InitMixin(self, ParasiteMixin)
     InitMixin(self, RolloutMixin)
@@ -302,7 +313,18 @@ function ARC:UnDeploy()
 
 end
 
+
+function ARC:OnConstructionComplete()
+    --Deploy
+    self.deployMode = ARC.kDeployMode.Deployed
+    self:SetMode(ARC.kMode.Stationary)
+end
+
 function ARC:PerformActivation(techId, position, normal, commander)
+
+    if not self:GetIsBuilt() then
+        return false, false
+    end
 
     if techId == kTechId.ARCDeploy then
     
@@ -349,7 +371,7 @@ function ARC:GetActivationTechAllowed(techId)
     if techId == kTechId.ARCDeploy then
         return self.deployMode == ARC.kDeployMode.Undeployed
     elseif techId == kTechId.Move then
-        return self.deployMode == ARC.kDeployMode.Undeployed
+        return false --self.deployMode == ARC.kDeployMode.Undeployed
     elseif techId == kTechId.ARCUndeploy then
         return self.deployMode == ARC.kDeployMode.Deployed
     elseif techId == kTechId.Stop then
@@ -364,7 +386,7 @@ function ARC:GetTechButtons(techId)
 
     local attackTechId = self:GetInAttackMode() and kTechId.Attack or kTechId.None
     
-    return  { kTechId.Move, kTechId.Stop, attackTechId, kTechId.None,
+    return  { kTechId.None, kTechId.None, attackTechId, kTechId.None,
               kTechId.ARCDeploy, kTechId.ARCUndeploy, kTechId.None, kTechId.None }
               
 end
@@ -595,12 +617,12 @@ end
 function ARC:ValidateTargetPosition(position)
 
     -- ink clouds will screw up with arcs
-    local inkClouds = GetEntitiesForTeamWithinRange("ShadeInk", GetEnemyTeamNumber(self:GetTeamNumber()), position, ShadeInk.kShadeInkDisorientRadius)
-    if #inkClouds > 0 then
-        return false
-    end
+--     local inkClouds = GetEntitiesForTeamWithinRange("ShadeInk", GetEnemyTeamNumber(self:GetTeamNumber()), position, ShadeInk.kShadeInkDisorientRadius)
+--     if #inkClouds > 0 then
+--         return false
+--     end
 
-    local distance = (self:GetOrigin() - position):GetLength()
+    local distance = (self:GetOrigin() - position):GetLength() -- todo - implement Y Coordinate
     if distance < ARC.kMinFireRange or distance > ARC.kFireRange then
         return false
     end
@@ -639,8 +661,8 @@ function ARC:OnOverrideOrder(order)
     if order:GetType() == kTechId.Default then
         if self.deployMode == ARC.kDeployMode.Deployed then
             order:SetType(kTechId.Attack)
-        else
-            order:SetType(kTechId.Move)
+--         else
+--             order:SetType(kTechId.Move)
         end
     end
 end

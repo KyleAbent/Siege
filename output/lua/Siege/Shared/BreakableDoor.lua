@@ -10,6 +10,9 @@ Script.Load("lua/StaticTargetMixin.lua")
 Script.Load("lua/MapBlipMixin.lua")
 Script.Load("lua/UnitStatusMixin.lua")
 Script.Load("lua/WeldableMixin.lua")
+-- Script.Load("lua/PowerConsumerMixin.lua")
+
+
 
 class 'BreakableDoor' (ScriptActor)
 
@@ -29,6 +32,7 @@ AddMixinNetworkVars(ModelMixin, networkVars)
 AddMixinNetworkVars(LiveMixin, networkVars)
 AddMixinNetworkVars(CombatMixin, networkVars)
 AddMixinNetworkVars(TeamMixin, networkVars)
+-- AddMixinNetworkVars(PowerConsumerMixin, networkVars)
 
 function BreakableDoor:OnCreate()
 
@@ -38,10 +42,13 @@ function BreakableDoor:OnCreate()
        InitMixin(self, LiveMixin)
        InitMixin(self, CombatMixin)
        InitMixin(self, TeamMixin)
+       self.teamNumber = 1
+--        InitMixin(self, PowerConsumerMixin)
         self.timeOfDestruction = 0
-
-
 end
+
+
+
 function BreakableDoor:OnInitialized()
         ScriptActor.OnInitialized(self)
     self:SetModel(BreakableDoor.kModelName , kDoorAnimationGraph)  
@@ -181,6 +188,21 @@ function BreakableDoor:GetSendDeathMessageOverride()
     return false
 end
 
+-- function BreakableDoor:GetRequiresPower()
+--     return true
+-- end
 
+-- function BreakableDoor:OnPowerOff()
+--     if not self.open then
+--         --minimize our health
+--         if self.health >100 then
+--             self.health = 100
+--         end
+--     end
+-- end
+
+-- function BreakableDoor:OnPowerOn()
+--     -- Optional: Restore some health when power returns?
+-- end
 
 Shared.LinkClassToMap("BreakableDoor", BreakableDoor.kMapName, networkVars)

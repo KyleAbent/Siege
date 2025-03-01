@@ -38,32 +38,42 @@ local function UpdateQueuePosition(self)
 end
 
 local function UpdateWaveTime(self)
-
     if self:GetIsDestroyed() then
         return false
     end
-    
+
     local team = self:GetTeam()
     assert(team:GetIsAlienTeam(), team.teamName)
 
     if self.queuePosition <= team:GetEggCount() then
         local entryTime = self:GetRespawnQueueEntryTime() or 0
-        self.timeWaveSpawnEnd = entryTime + kAlienSpawnTime
+
+        -- Get the game info to access start time and siege timer
+        local gameInfo = GetGameInfoEntity()
+        local gameStartTime = gameInfo:GetStartTime()
+        local siegeTime = gameInfo:GetSiegeTime()
+        local currentTime = Shared.GetTime() - gameStartTime
+
+        -- Calculate progress toward siege time (clamped between 0 and 1)
+        local siegeProgress = math.min(1, math.max(0, currentTime / siegeTime))
+
+        -- Adjust spawn time based on progress - same formula as in UpdateAlienSpectators
+        local adjustedSpawnTime = kAlienSpawnTime * (1 - (siegeProgress * 0.8))
+
+        -- Use adjusted time instead of kAlienSpawnTime
+        self.timeWaveSpawnEnd = entryTime + adjustedSpawnTime
     else
         self.timeWaveSpawnEnd = 0
     end
-    
+
     Server.SendNetworkMessage(Server.GetOwner(self), "SetTimeWaveSpawnEnds", { time = self.timeWaveSpawnEnd }, true)
-    
+
     if not self.sentRespawnMessage then
-    
         Server.SendNetworkMessage(Server.GetOwner(self), "SetIsRespawning", { isRespawning = true }, true)
         self.sentRespawnMessage = true
-        
     end
-    
+
     return true
-    
 end
 
 function AlienSpectator:OnCreate()

@@ -30,10 +30,74 @@ Shared.PrecacheSurfaceShader("cinematics/vfx_materials/mucousshield_view.surface
 Alien.kBoneshieldThirdPersonMaterialName = "cinematics/vfx_materials/boneshield.material"
 Shared.PrecacheSurfaceShader("cinematics/vfx_materials/boneshield.surface_shader")
 
+Alien.kPrimaledViewMaterialName = "cinematics/vfx_materials/primal_view.material"
+Alien.kPrimaledThirdpersonMaterialName = "cinematics/vfx_materials/primal.material"
+Shared.PrecacheSurfaceShader("cinematics/vfx_materials/primal_view.surface_shader")
+Shared.PrecacheSurfaceShader("cinematics/vfx_materials/primal.surface_shader")
+
 local kAlienFirstPersonHitEffectName = PrecacheAsset("cinematics/alien/hit_1p.cinematic")
 
 local kEnzymeEffectInterval = 0.2
 local kMucousEffectInterval = 1
+
+function Alien:UpdatePrimalEffect(isLocal)
+    if self.primaledClient ~= self.primaled then
+
+        if isLocal then
+
+            local viewModel= nil
+            if self:GetViewModelEntity() then
+                viewModel = self:GetViewModelEntity():GetRenderModel()
+            end
+
+            if viewModel then
+
+                if self.primaled then
+                    self.primaledViewMaterial = AddMaterial(viewModel, Alien.kPrimaledViewMaterialName)
+                else
+
+                    if RemoveMaterial(viewModel, self.primaledViewMaterial) then
+                        self.primaledViewMaterial = nil
+                    end
+
+                end
+
+            end
+
+        end
+
+        local thirdpersonModel = self:GetRenderModel()
+        if thirdpersonModel then
+
+            if self.primaled then
+                self.primaledMaterial = AddMaterial(thirdpersonModel, Alien.kPrimaledThirdpersonMaterialName)
+            else
+
+                if RemoveMaterial(thirdpersonModel, self.primaledMaterial) then
+                    self.primaledMaterial = nil
+                end
+
+            end
+
+        end
+
+        self.primaledClient = self.primaled
+
+    end
+
+    // update cinemtics
+    if self.primaled then
+
+        if not self.lastprimaledEffect or self.lastprimaledEffect + kEnzymeEffectInterval < Shared.GetTime() then
+
+            self:TriggerEffects("enzymed")
+            self.lastprimaledEffect = Shared.GetTime()
+
+        end
+
+    end
+
+end
 
 function PlayerUI_GetNumHives()
 
@@ -656,6 +720,7 @@ function Alien:UpdateClientEffects(deltaTime, isLocal)
     self:UpdateElectrified(isLocal)
     self:UpdateMucousEffects(isLocal)
     self:UpdateBoneshieldEffects(isLocal)
+    self:UpdatePrimalEffect(isLocal)
 
     if isLocal and self:GetIsAlive() then
 

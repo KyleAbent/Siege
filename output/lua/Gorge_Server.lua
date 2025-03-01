@@ -15,7 +15,7 @@ function Gorge:InitWeapons()
     self:GiveItem(DropStructureAbility.kMapName)
     self:GiveItem(BileBomb.kMapName)
     self:GiveItem(BabblerAbility.kMapName)
-
+    self:GiveItem(DropStructureAbilityExtra.kMapName)
     self:SetActiveWeapon(SpitSpray.kMapName)
     
 end
