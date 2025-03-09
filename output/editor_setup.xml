@@ -1,6 +1,13 @@
 <editor>
 <classes>
-   
+<class name="power_generator" help="Controls lighting for locations with matching generator ID">
+    <model>
+        <file>models/system/editor/power_node.model</file>
+    </model>
+    
+    <parameter name="powerGeneratorId" type="integer" label="Generator ID" help="Unique ID to identify this generator. Locations with this ID will have their lights controlled by this generator." default="0"/>
+</class>
+
 <class name="gravity_section" placeable="true">
     <parent>trigger</parent>
     
@@ -856,7 +863,7 @@
 	<parent>trigger</parent>
 
         <parameter name="showOnMinimap" type="boolean" label="Show On Minimap" help="Show location on minimap" default="true"/>
-
+	<parameter name="powerGeneratorId" type="integer" label="Power Generator ID" help="ID of the generator that controls lights for this location. 0 means no generator (PowerPoint controls lights)." default="0"/>
     </class>
 
     <!-- Kill trigger -->

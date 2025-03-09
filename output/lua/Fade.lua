@@ -703,4 +703,21 @@ function Fade:GetMovementSpecialCooldown()
     return cooldown
 end
 
+
+
+
+
+--Siege
+
+function Fade:GetRedemptionCoolDown()
+    return kFadeRedemptionCooldown
+end
+
+function Fade:GetRebirthLength()
+    return kFadeRebirthLength
+end
+
+
+
+
 Shared.LinkClassToMap("Fade", Fade.kMapName, networkVars, true)

@@ -719,3 +719,16 @@ local OnCommandLerkAbilitiesRadiusDebugging = function()
 end
 
 Event.Hook("Console_debuglerkabilities", OnCommandLerkAbilitiesRadiusDebugging)
+
+
+
+
+--Siege
+
+function Lerk:GetRedemptionCoolDown()
+return kLerkRebirthCooldown
+end
+
+function Lerk:GetRebirthLength()
+return kLerkRebirthLength
+end

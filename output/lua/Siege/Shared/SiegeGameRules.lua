@@ -16,12 +16,15 @@ local networkVars =
     timeGameStarted = "time",
     frontDoorOpened = "boolean",
     siegeDoorOpened = "boolean",
-    sideDoorOpened = "boolean"
+    sideDoorOpened = "boolean",
+    fogDensity = "float"
 }
 
 -- Initialize game rules
 function SiegeGameRules:OnCreate()
      NS2Gamerules.OnCreate(self)
+     self.timeCheckedForFog = 0
+     self.fogDensity = 1  -- Default fog density
      -- Initialize default values
     self.frontDoorTime = 300  -- 5 minutes default
     self.siegeDoorTime = 900  -- 15 minutes default
@@ -116,6 +119,45 @@ if Server then
         self:SetTimer()
     end
 
+
+
+    -- Public function to control fog density from gameplay events
+    function SetSiegeFogDensity(density)
+        self.fogDensity = density
+        Server.SendNetworkMessage("SiegeFogUpdate", {density = density}, true)
+        gLastFogUpdate = Shared.GetTime()  -- Reset timer
+    end
+
+    function SiegeGameRules:UpdateSiegeFog(deltaTime)
+        -- Configuration
+        local kFogUpdateInterval = 5  -- 60 seconds between random updates
+        local gLastFogUpdate = 0
+
+        -- Update fog randomly every minute
+--         Print("Server: UpdateSiegeFog")
+         if self.timeCheckedForFog + kFogUpdateInterval < Shared.GetTime() then
+                self.timeCheckedForFog = Shared.GetTime()
+            local newDensity = math.random(0, 500) / 100
+
+            -- Update global setting
+            self.fogDensity = newDensity
+
+            -- Send to all clients
+            Server.SendNetworkMessage("SiegeFogUpdate", {density = newDensity}, true)
+
+            -- Debug print
+            Print("Server: Fog density updated to " .. tostring(newDensity))
+
+            -- Update timestamp
+            gLastFogUpdate = Shared.GetTime()
+        end
+    end
+
+    function SiegeGameRules:OnUpdate(timePassed)
+        NS2Gamerules.OnUpdate(self, timePassed)
+        --self:UpdateSiegeFog(timePassed) this is just fun debugging
+    end
+
 end
 
 
@@ -125,3 +167,17 @@ end
 
 -- Register entity
 Shared.LinkClassToMap("SiegeGameRules", SiegeGameRules.kMapName, {})
+
+
+function OnCommandSetFogDensity(client, densityStr)
+    if not Shared.GetCheatsEnabled() then return end
+    local density = tonumber(densityStr) or 1
+    local gameRules = GetGamerules()
+    if gameRules and gameRules:isa("SiegeGameRules") then
+        gameRules.fogDensity = density
+        Server.SendNetworkMessage("SiegeFogUpdate", {density = density}, true)
+        Print("Server: Manually set fog density to " .. tostring(density))
+    end
+end
+
+Event.Hook("Console_setfogdensity", OnCommandSetFogDensity)

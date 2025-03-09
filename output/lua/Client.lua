@@ -101,6 +101,8 @@ Client.timeOfLastPowerPoints = nil
 
 Client.kAmbientVolume = (Clamp(Client.GetOptionInteger("ambientVolume", 100), 20, 100) / 100)
 
+Client.currentFogDensity = 0  -- Initialize with default density
+
 local startLoadingTime = Shared.GetSystemTimeReal()
 local currentLoadingTime = Shared.GetSystemTimeReal()
 
@@ -902,7 +904,7 @@ function OnUpdateClient(deltaTime)
         --UpdateDangerEffects(player)
     end
     
-    UpdatePowerPointLights()
+    UpdatePowerPointLights() --todo powergenerator lights
     
     if not optionsSent then
 
@@ -1823,6 +1825,10 @@ Event.Hook("MapPostLoad", OnMapPostLoad)
 Event.Hook("UpdateClient", OnUpdateClient)
 Event.Hook("NotifyGUIItemDestroyed", OnNotifyGUIItemDestroyed)
 Event.Hook("LoadComplete", OnLoadComplete)
+
+
+
+
 
 -- Debug command to test resolution scaling
 -- Not super elegant, but provides easy test cases

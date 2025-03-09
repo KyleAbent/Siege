@@ -38,7 +38,7 @@ kRedemptionCooldown = 45
 kRedemptionEHPThresholdMin = 15
 kRedemptionEHPThresholdMax = 30
 
-kThickenedSkinCost = 2
+kThickenedSkinCost = 10
 kHungerCost = 2
 
 kMaxEntitiesInRadius = 99
@@ -56,6 +56,22 @@ kMaxGorgeWhips = 3
 kMaxGorgeShades = 3
 kMaxGorgeShifts = 3
 kMaxGorgeCrags = 3
+
+
+
+kSkulkRedemptionCooldown = 20
+kGorgeRebirthCooldown= 15
+kLerkRebirthCooldown = 15
+kFadeRedemptionCooldown = 20
+kOnosRedemptionCooldown = 25
+
+
+kSkulkRebirthLength = 2
+kGorgeRebirthLength = 3
+kLerkRebirthLength = 4
+kFadeRebirthLength = 5
+kOnosRebirthLength = 6
+
 
 ---------------------
 

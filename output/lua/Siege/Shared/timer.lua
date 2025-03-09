@@ -19,8 +19,8 @@ local networkVars =
 }
 
 function Timer:TimerValues()
-
     gameinfo = GetGameInfoEntity()
+    if not gameinfo then return end
     local kSiegeTime = gameinfo:GetSiegeTime()
     local kFrontTime = gameinfo:GetFrontTime()
     local kSideTime = gameinfo:GetSideTime()
@@ -34,6 +34,7 @@ function Timer:TimerValues()
    self.frontOpened = false
    self.siegeBeaconed = false
 end
+
 function Timer:GetInitialSiegeLength() 
     return self.initialSiegeLength
 end

@@ -865,11 +865,11 @@ function Alien:CheckRedemptionTimer()
 end
 
 function Alien:GetRebirthLength()
-    return 0
+    return 4
 end
 
 function Alien:GetRedemptionCoolDown()
-    return 0
+    return 20
 end
 
 

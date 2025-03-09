@@ -22,10 +22,16 @@ local currentFogOption = kDefaultFogValue -- default in the .render_setup file.
 function UpdateFogVisibility()
     
     local fogOption = GetFogOptionValue()
-    
+    local isCommander = false
     -- If player is overhead, fog should not be visible.
     if PlayerUI_IsOverhead and PlayerUI_IsOverhead() then
         fogOption = "off"
+        isCommander = true
+    end
+
+    if fogOption == "off" and not isCommander then
+        --Sorry but this is now required in Siege!
+        fogOption = "low"
     end
     
     if currentFogOption ~= fogOption then

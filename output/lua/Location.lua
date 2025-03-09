@@ -21,6 +21,7 @@ Location.kMapName = "location"
 local networkVars =
 {
     showOnMinimap = "boolean",
+    powerGeneratorId = "integer"
 }
 
 Shared.PrecacheString("")
@@ -36,11 +37,28 @@ function Location:OnInitialized()
     if self.showOnMinimap == nil then
         self.showOnMinimap = true
     end
+
+    if self.powerGeneratorId == nil then
+        self.powerGeneratorId = 0
+    end
     
     self:SetTriggerCollisionEnabled(true)
     
     self:SetPropagate(Entity.Propagate_Always)
     
+end
+
+function Location:GetPowerGenerator()
+    if self.powerGeneratorId and self.powerGeneratorId ~= 0 then
+        -- Find the generator with this ID
+        local generators = Shared.GetEntitiesWithClassname("PowerGenerator")
+        for _, generator in ientitylist(generators) do
+            if generator:GetPowerGeneratorId() == self.powerGeneratorId then
+                return generator
+            end
+        end
+    end
+    return nil
 end
 
 function Location:Reset()

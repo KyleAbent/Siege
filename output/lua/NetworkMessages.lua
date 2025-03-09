@@ -1330,6 +1330,7 @@ Shared.RegisterNetworkMessage("DeathMessage", { killerIsPlayer = "boolean", kill
 
 Shared.RegisterNetworkMessage("DumpTeamBrain", {})
 
+
 if Shared.GetThunderdomeEnabled() then
     --End of round message to notify clients to check if they've unlocked any items
     Shared.RegisterNetworkMessage("Thunderdome_EndRoundItemsCheck")
@@ -1366,3 +1367,12 @@ function ParseGorgeAdvancedBuildMessage(t)
 end
 
 Shared.RegisterNetworkMessage("GorgeBuildAdvancedStructure", kGorgeAdvancedBuildMessage)
+
+
+
+-- Shared definitions for Siege mod
+local kFogDensityUpdateMessage = {
+    density = "float"
+}
+Shared.RegisterNetworkMessage("SiegeFogUpdate", kFogDensityUpdateMessage)
+Print("NetworkMessages.lua - SiegeFogUpdate message registered with format: density = float")

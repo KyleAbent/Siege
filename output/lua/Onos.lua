@@ -974,4 +974,17 @@ function Onos:GetIsBoneShieldActive()
     
 end
 
+
+
+--Siege
+function Onos:GetRedemptionCoolDown()
+return kOnosRedemptionCooldown
+end
+
+function Onos:GetRebirthLength()
+return kOnosRebirthLength
+end
+
+
+
 Shared.LinkClassToMap("Onos", Onos.kMapName, networkVars)

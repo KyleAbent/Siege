@@ -744,6 +744,17 @@ function Skulk:OnAdjustModelCoords(modelCoords)
     
 end
 
+
+--Siege
+function Skulk:GetRedemptionCoolDown()
+return kSkulkRedemptionCooldown
+end
+
+function Skulk:GetRebirthLength()
+return kSkulkRebirthLength
+end
+
+
 Shared.LinkClassToMap("Skulk", Skulk.kMapName, networkVars, true)
 
 if Server then

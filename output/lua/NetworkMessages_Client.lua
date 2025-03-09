@@ -472,3 +472,32 @@ if Shared.GetThunderdomeEnabled() then
     )
 
 end
+
+
+
+-- Add this function definition near other similar OnCommand functions
+function OnCommandSiegeFogUpdate(message)
+    Print("============================================================")
+    Print("NETWORK MESSAGE RECEIVED: SiegeFogUpdate with density = " .. tostring(message.density))
+    Print("============================================================")
+
+    -- Only update fog when density actually changes
+    if Client.currentFogDensity ~= message.density then
+        Print("Fog density changed from " .. tostring(Client.currentFogDensity) .. " to " .. tostring(message.density))
+        Client.currentFogDensity = message.density
+
+        -- Update all fog spheres with new density
+        if Client.fogSphereVolumeList then
+            Print("Found " .. #Client.fogSphereVolumeList .. " fog spheres to update")
+            for i, fogSphere in ipairs(Client.fogSphereVolumeList) do
+                fogSphere:SetDensity(Client.currentFogDensity)
+                Print("Updated fog sphere " .. i .. " density to " .. Client.currentFogDensity)
+            end
+        else
+            Print("No fog spheres list found!")
+        end
+    end
+end
+
+-- Add this hook near other Client.HookNetworkMessage calls at the bottom of the file
+Client.HookNetworkMessage("SiegeFogUpdate", OnCommandSiegeFogUpdate)

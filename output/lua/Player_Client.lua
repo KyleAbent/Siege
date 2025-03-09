@@ -3114,7 +3114,7 @@ function PlayerUI_GetLocationPower()
         powerSource = powerPoint
         if powerPoint then
 
-            isPowered = powerPoint:GetIsPowering()
+            isPowered = powerPoint:GetIsPowering() --todo powergenerator ?
             lightMode = powerPoint:GetLightMode()
 
         end

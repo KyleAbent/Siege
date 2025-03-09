@@ -533,4 +533,16 @@ if Server then
 end
 
 
+
+---
+function Gorge:GetRedemptionCoolDown()
+return kGorgeRebirthCooldown
+end
+
+
+function Gorge:GetRebirthLength()
+return kGorgeRebirthLength
+end
+
+
 Shared.LinkClassToMap("Gorge", Gorge.kMapName, networkVars, true)

@@ -18,7 +18,27 @@ function Plugin:OnNotifyAlienCommander(who)
          self:NotifyOne(client, "AlienTechPoint doesn't allow traditional Hive Building by Drag and Drop due to technical difficulties :P.", true)
     end
 end
-Shine.Hook.SetupClassHook( "AlienTechPoint", "NotifyAlienCommander", "OnNotifyAlienCommander", "PassivePost" ) 
+Shine.Hook.SetupClassHook( "AlienTechPoint", "NotifyAlienCommander", "OnNotifyAlienCommander", "PassivePost" )
+
+
+
+Shine.Hook.SetupClassHook( "Alien", "TriggerRedeemCountDown", "OnRedemedHook", "PassivePre" )
+Shine.Hook.SetupClassHook( "Alien", "TriggerRebirthCountDown", "TriggerRebirthCountDown", "PassivePre" )
+
+
+  function Plugin:OnRedemedHook(player)
+            local herp = player:GetClient()
+            local derp = herp:GetControllingPlayer()
+            Shine.ScreenText.Add( 50, {X = 0.20, Y = 0.90,Text = "Redemption Cooldown: %s",Duration = derp:GetRedemptionCoolDown() or 0,R = 255, G = 0, B = 0,Alignment = 0,Size = 1,FadeIn = 0,}, player )
+ end
+
+function Plugin:TriggerRebirthCountDown(player)
+            local herp = player:GetClient()
+            local derp = herp:GetControllingPlayer()
+            Shine.ScreenText.Add( 50, {X = 0.20, Y = 0.90,Text = "Rebirth Cooldown: %s",Duration = derp:GetRedemptionCoolDown() or 0,R = 255, G = 0, B = 0,Alignment = 0,Size = 1,FadeIn = 0,}, player )
+end
+
+
 ------------------------------------------------------------
 
 function Plugin:NotifyOne( Player, String, Format, ... )
@@ -566,6 +586,7 @@ end
 local LoadLayoutCommand = self:BindCommand("sh_loadlayout", "loadlayout", LoadLayout)
 LoadLayoutCommand:Help("Loads the saved structure layout for the current map")
 LoadLayoutCommand:AddParam{ Type = "number", Optional = true }
+
 
 
 
